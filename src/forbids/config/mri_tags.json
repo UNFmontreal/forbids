@@ -1,0 +1,21 @@
+{
+    "instrument_tags": [
+        "Manufacturer",
+        "ManufacturersModelName",
+        "StationName",
+        "SoftwareVersion"
+    ],
+    "properties": {
+        "ManufacturersModelName": "=",
+        "EchoTime": "~.001",
+        "RepetitionTime": "~.001",
+        "EchoTrainLength": "=",
+        "PixelBandwidth": "=",
+        "dcmmeta_shape": "=",
+        "global": {
+            "const": {
+                "SequenceName": "="
+            }
+        }
+    }
+}
