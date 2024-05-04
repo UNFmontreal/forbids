@@ -1,9 +1,7 @@
-from typing import Annotated, Literal, Union, Tuple
-from dataclasses import asdict, dataclass, make_dataclass, field
-from apischema import discriminator
-import keyword
-from collections.abc import Sequence
-
+import pydantic
+import bids
+import logging
+from typing import Iterator, Literal, Union, Annotated
 
 FORBIDS_SCHEMA_FOLDER = ".forbids"
 
@@ -11,17 +9,16 @@ FORBIDS_SCHEMA_FOLDER = ".forbids"
 def dict2schemaprops(sidecar: dict, config_props: dict) -> Iterator:
     for k, v in sidecar.items():
         if k in config_props:
-            k2 = k + ("__" if k in keyword.kwlist else "")
             if isinstance(config_props[k], dict):
-                yield k2, sidecar2schema(v, config_props[k], k), field()
-            elif isinstance(v, list):
-                yield k2, Tuple[*[Literal[vv] for vv in v]], field()
+                yield k, Annotated[sidecar2schema(v, config_props[k], k), pydantic.fields.FieldInfo(required=True)]
             else:
-                yield k2, Literal[v], field()
+                yield k, (Literal[v], pydantic.fields.FieldInfo(required=True))
 
 
-def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str):
-    return make_dataclass(subschema_name, fields=list(dict2schemaprops(sidecar, config_props)))
+def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str) -> pydantic.BaseModel:
+    return pydantic.create_model(
+        subschema_name, __config__=pydantic.ConfigDict(extra="ignore"), **dict(dict2schemaprops(sidecar, config_props))
+    )
 
 
 def sidecars2unionschema(
@@ -30,7 +27,7 @@ def sidecars2unionschema(
     discriminating_fields: list[str],
     config_props: dict,
     factor_entities: list = ("subject", "session", "run"),
-) -> Annotated:
+) -> pydantic.BaseModel:
 
     series_entities = [{k: v for k, v in sc.entities.items() if k not in factor_entities} for sc in sidecars]
     # TODO: not assume we have exact entities set for all sidecars
@@ -48,6 +45,8 @@ def sidecars2unionschema(
     if len(subschemas) == 1:
         return subschemas[subschema_name]
 
-    UnionModel = Annotated[Union[tuple(subschemas.values())], discriminator(discriminating_fields[0], subschemas)]
+    class UnionModel(pydantic.RootModel):
+        # model_config = pydantic.ConfigDict(extra="ignore")
+        root: Union[tuple(subschemas.values())] = Field(discriminator=discriminating_fields[0])
 
     return UnionModel

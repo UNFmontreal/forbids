@@ -5,7 +5,7 @@ build-backend = "flit.buildapi"
 [project]
 name =  "py-project-toml"
 authors = [
-    {name = "Daniel Ciborowski", email = "dciborow@microsoft.com"},
+    {name = "Basile Pinsard", email = "basile.pinsard@gmail.com"},
 ]
 description = "Sample Python Project for creating a new Python Module"
 readme = "README.md"
@@ -25,8 +25,12 @@ dynamic = ["version"]
 dependencies = [
     "click",
     "pybids",
-    "pydantic"
+    "apischema",
+    "jsonschema"
 ]
+
+[project.scripts]
+forbids = "forbids.cli.run:main"
 
 [project.optional-dependencies]
 spark = [
@@ -53,12 +57,12 @@ test = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/microsoft/python-package-template/tree/main#readme"
-Source = "https://github.com/microsoft/python-package-template"
-Tracker = "https://github.com/microsoft/python-package-template/issues"
+Documentation = "https://github.com/UNFMontreal/forbids"
+Source = "https://github.com/UNFMontreal/forbids"
+Tracker = "https://github.com/UNFMontreal/forbids/issues"
 
 [tool.flit.module]
-name = "python_package"
+name = "forbids"
 
 [tool.bandit]
 exclude_dirs = ["build","dist","tests","scripts"]
