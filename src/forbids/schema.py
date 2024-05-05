@@ -10,6 +10,11 @@ from collections.abc import Sequence
 FORBIDS_SCHEMA_FOLDER = ".forbids"
 
 
+# entities that differentiate files from the same series
+# where it might be None for one of the files.
+ALT_ENTITIES = ["reconstruction"]
+
+
 def dict2schemaprops(sidecar: dict, config_props: dict) -> Iterator:
     for k, v in sidecar.items():
         if k in config_props:
@@ -38,7 +43,6 @@ def sidecars2unionschema(
     # TODO: not assume we have exact entities set for all sidecars
     # skip validation for now, doesn't work with UNIT1
     schema_name = bids_layout.build_path(series_entities[0], absolute_paths=False, validate=False)
-    print(schema_name)
     subschemas = {}
     for sc in sidecars:
         logging.info(f"generating schema from {sc.path}")

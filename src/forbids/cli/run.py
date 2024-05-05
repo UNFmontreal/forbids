@@ -1,8 +1,15 @@
 import os
 import argparse
 import bids
+import logging
 from .init import initialize
 from .validation import validate
+
+DEBUG = bool(os.environ.get("DEBUG", False))
+if DEBUG:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
 
 
 def parse_args():
@@ -16,8 +23,8 @@ def parse_args():
         default=True,
         help="all sessions will have the same structure, forces to factor session entity",
     )
-    p.add_argument("--participant-label", nargs="+")
-    p.add_argument("--session-label", nargs="*")
+    p.add_argument("--participant-label", nargs="+", default=bids.layout.Query.ANY)
+    p.add_argument("--session-label", nargs="*", default=[bids.layout.Query.NONE, bids.layout.Query.ANY])
     return p.parse_args()
 
 

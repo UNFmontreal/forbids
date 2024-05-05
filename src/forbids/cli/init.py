@@ -31,19 +31,13 @@ def initialize(bids_layout: bids.BIDSLayout, session_uniform: bool = False) -> N
     # get all jsons for a single subject
     all_sample_jsons = bids_layout.get(subject=all_subjects[0], extension=".json")
 
-    # entities that differentiate files from the same series
-    # where it might be None for one of the files.
-    alt_entities = ["reconstruction"]
-
     # create union schema accross examplar subject for each BIDS entries
     for sample_json in all_sample_jsons:
-        print(sample_json)
-        logging.info(f"treating {sample_json}")
         entities = sample_json.entities.copy()
         if entities["suffix"] in ["scans"]:
             continue
         query_entities = entities.copy()
-        for entity in alt_entities:
+        for entity in schema.ALT_ENTITIES:
             if entity not in query_entities:
                 query_entities[entity] = bids.layout.Query.NONE
         query_entities.pop("subject")
@@ -63,10 +57,10 @@ def initialize(bids_layout: bids.BIDSLayout, session_uniform: bool = False) -> N
         if session_uniform:
             entities.pop("session")
         schema_path = bids_layout.build_path(entities, absolute_paths=False)
-        print(schema_path)
         schema_path_abs = os.path.join(bids_layout.root, schema.FORBIDS_SCHEMA_FOLDER, schema_path)
         os.makedirs(os.path.dirname(schema_path_abs), exist_ok=True)
 
         json_schema = deserialization_schema(sidecar_schema, additional_properties=True)
         with open(schema_path_abs, "wt") as fd:
             json.dump(json_schema, fd)
+    logging.info("Successfully generated schema")
