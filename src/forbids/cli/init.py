@@ -62,5 +62,5 @@ def initialize(bids_layout: bids.BIDSLayout, session_uniform: bool = False) -> N
 
         json_schema = deserialization_schema(sidecar_schema, additional_properties=True)
         with open(schema_path_abs, "wt") as fd:
-            json.dump(json_schema, fd)
+            json.dump(json_schema, fd, indent=2)
     logging.info("Successfully generated schema")
