@@ -7,7 +7,7 @@ name =  "py-project-toml"
 authors = [
     {name = "Basile Pinsard", email = "basile.pinsard@gmail.com"},
 ]
-description = "Sample Python Project for creating a new Python Module"
+description = "forBIDS - BIDS protocol compliance validation"
 readme = "README.md"
 classifiers = [
     "Development Status :: 3 - Alpha",

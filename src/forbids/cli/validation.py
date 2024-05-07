@@ -3,13 +3,10 @@ import bids
 import logging
 import keyword
 import jsonschema.validators
+from jsonschema.exceptions import ValidationError
 
 
 from .. import schema
-
-
-class ValidationError(ValueError):
-    pass
 
 
 class BIDSFileError(ValidationError):
@@ -42,7 +39,7 @@ def validate(bids_layout: bids.BIDSLayout, **entities):
                 query_entities[entity] = bids.layout.Query.NONE
         sidecars_to_validate = bids_layout.get(**query_entities)
         if not sidecars_to_validate and not bidsfile_constraints.get("optional", False):
-            yield BIDSFileError(ref_sidecar)
+            yield BIDSFileError(f"{ref_sidecar} found no match")
         num_sidecars = len(sidecars_to_validate)
         min_runs = bidsfile_constraints.get("min_runs", 0)
         max_runs = bidsfile_constraints.get("max_runs", 1e10)
@@ -55,7 +52,10 @@ def validate(bids_layout: bids.BIDSLayout, **entities):
         validator = validator_cls(sidecar_schema)
 
         for sidecar in sidecars_to_validate:
-            all_sidecars.remove(sidecar)
+            if sidecar in all_sidecars:
+                all_sidecars.remove(sidecar)
+            else:
+                logging.error("an error occured")
             logging.info(f"validating {sidecar.path}")
             sidecar_content = {k + ("__" if k in keyword.kwlist else ""): v for k, v in sidecar.get_dict().items()}
             yield from validator.iter_errors(sidecar_content)
