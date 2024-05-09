@@ -19,13 +19,21 @@ ALT_ENTITIES = ["reconstruction"]
 
 
 def tagpreset2type(tag: str, tag_preset: str, value: Any):
+    # Converts tag presets from config files into a typing with constraints
+
+    # Parameters:
+    #   tag: the name of the tag
+    #   tag_preset: the expression to set constraint from
+    #   value: the examplar value to determine type and set constants
+
+    # Returns:
+    #   type: a python type with added apischema constraints
     if tag_preset == "=":
         if isinstance(value, list):
             return Tuple[*[Literal[vv] for vv in value]]
         else:
             return Literal[value]
     elif tag_preset == "*":
-        print("here")
         return type(value)
     elif tag_preset.startswith("~="):
         tag = NewType(tag, type(value))
@@ -36,20 +44,35 @@ def tagpreset2type(tag: str, tag_preset: str, value: Any):
         tag = NewType(tag, type(value))  # likely a string, check if this need enforcement
         schema(pattern=re.compile(tag_preset[1:]))(tag)
         return tag
+    else:
+        raise RuntimeError(f"Unsupported constraint for {tag} in the config file.")
 
 
-def dict2schemaprops(sidecar: dict, config_props: dict) -> Iterator:
+def dict2schemaprops(sidecar: dict, config_props: dict, schema_path: str) -> Iterator:
+    # from a example dictionary and matching config, generate dataclass fields definitions
+    # recursively creates subschema for dictionary values
+
+    # Parameters:
+    # sidecar: dict with examplar values to determine type and constant
+    # config_props: dict with preset of how to validate tags
+    # schema_path: schema name to be postpended in recursive schema defs for uniqness
     for k, v in sidecar.items():
         if k in config_props:
             k2 = k + ("__" if k in keyword.kwlist else "")
             if isinstance(config_props[k], dict):
-                yield k2, sidecar2schema(v, config_props[k], k), field()
+                yield k2, sidecar2schema(v, config_props[k], f"{schema_path}_{k}"), field()
             else:
-                yield k2, *tagpreset2type(k, config_props[k], v)
+                yield k2, tagpreset2type(f"{schema_path}_{k}", config_props[k], v)
 
 
 def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str):
-    return make_dataclass(subschema_name, fields=list(dict2schemaprops(sidecar, config_props)))
+    # from a examplar sidecar and config, generate a schema
+
+    # Parameters:
+    # sidecar: examplar sidecar
+    # config_props: schema properties config
+    # subschema_name: name to give the subschema
+    return make_dataclass(subschema_name, fields=list(dict2schemaprops(sidecar, config_props, subschema_name)))
 
 
 def sidecars2unionschema(
@@ -59,7 +82,9 @@ def sidecars2unionschema(
     config_props: dict,
     factor_entities: tuple = ("subject", "run"),
 ) -> Annotated:
+    # from a set of sidecars from different scanners generate a meta-schema
 
+    #
     series_entities = [{k: v for k, v in sc.entities.items() if k not in factor_entities} for sc in sidecars]
     # TODO: not assume we have exact entities set for all sidecars
     # skip validation for now, doesn't work with UNIT1
@@ -80,7 +105,7 @@ def sidecars2unionschema(
             if subschema == subschemas[sc_main_discriminating_value]:
                 continue
             else:
-                raise RuntimeError(f"cannot reconcile 2 schemas with same discriminating value")
+                print(f"cannot reconcile 2 schemas with same discriminating value")
         else:
             subschemas[sc_main_discriminating_value] = subschema
 
