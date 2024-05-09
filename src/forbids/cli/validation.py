@@ -1,10 +1,12 @@
-import os
-import bids
-import logging
+from __future__ import annotations
+
 import keyword
+import logging
+import os
+
+import bids
 import jsonschema.validators
 from jsonschema.exceptions import ValidationError
-
 
 from .. import schema
 
@@ -55,8 +57,9 @@ def validate(bids_layout: bids.BIDSLayout, **entities):
             if sidecar in all_sidecars:
                 all_sidecars.remove(sidecar)
             else:
-                logging.error("an error occured")
+                logging.error("an error occurred")
             logging.info(f"validating {sidecar.path}")
+            # rename conflictual keywords as the schema was created
             sidecar_content = {k + ("__" if k in keyword.kwlist else ""): v for k, v in sidecar.get_dict().items()}
             yield from validator.iter_errors(sidecar_content)
     for extra_sidecar in all_sidecars:

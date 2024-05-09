@@ -1,9 +1,12 @@
-import os
-import bids
+from __future__ import annotations
+
 import json
 import logging
-from apischema.json_schema import deserialization_schema
+import os
 from importlib.resources import files
+
+import bids
+from apischema.json_schema import deserialization_schema
 
 from .. import schema
 
@@ -21,7 +24,7 @@ def get_config(datatype):
     if modality not in configs:
         with files("forbids").joinpath(f"config/{modality}_tags.json") as cfg_pth:
             logging.debug(f"loading config {cfg_pth}")
-            with open(cfg_pth, "r") as cfg_fd:
+            with open(cfg_pth) as cfg_fd:
                 configs[modality] = json.load(cfg_fd)
     return configs[modality]
 
@@ -31,7 +34,7 @@ def initialize(bids_layout: bids.BIDSLayout, session_uniform: bool = False) -> N
     # get all jsons for a single subject
     all_sample_jsons = bids_layout.get(subject=all_subjects[0], extension=".json")
 
-    # create union schema accross examplar subject for each BIDS entries
+    # create union schema across examplar subject for each BIDS entries
     for sample_json in all_sample_jsons:
         entities = sample_json.entities.copy()
         if entities["suffix"] in ["scans"]:
@@ -55,7 +58,7 @@ def initialize(bids_layout: bids.BIDSLayout, session_uniform: bool = False) -> N
 
         entities["subject"] = "ref"
         if session_uniform:
-            entities.pop("session")
+            entities.pop("session", None)
         schema_path = bids_layout.build_path(entities, absolute_paths=False)
         schema_path_abs = os.path.join(bids_layout.root, schema.FORBIDS_SCHEMA_FOLDER, schema_path)
         os.makedirs(os.path.dirname(schema_path_abs), exist_ok=True)

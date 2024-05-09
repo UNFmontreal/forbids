@@ -1,7 +1,7 @@
 {
     "instrument_tags": [
-        "Manufacturer",
         "ManufacturersModelName",
+        "Manufacturer",
         "StationName",
         "SoftwareVersion"
     ],
@@ -10,11 +10,12 @@
         "BaseResolution": "=",
         "BodyPartExamined": "=",
         "CoilString": "=",
-        "DeviceSerialNumber": "=",
+        "DeviceSerialNumber": "*",
         "DwellTime": "=",
         "EchoTime": "=",
         "FlipAngle": "=",
         "ImageType": "=",
+        "ImagingFrequency": "~=.5",
         "InPlanePhaseEncodingDirectionDICOM": "=",
         "InversionTime": "=",
         "MRAcquisitionType": "=",
@@ -28,7 +29,7 @@
         "PhaseEncodingSteps": "=",
         "PhaseResolution": "=",
         "PixelBandwidth": "=",
-        "ProcedureStepDescription": "=",
+        "ProcedureStepDescription": "*",
         "ProtocolName": "=",
         "PulseSequenceDetails": "=",
         "ReceiveCoilActiveElements": "=",
@@ -43,7 +44,7 @@
         "SeriesDescription": "=",
         "SliceThickness": "=",
         "SoftwareVersions": "=",
-        "StationName": "=",
+        "StationName": "*",
         "dcmmeta_shape": "=",
         "global": {
             "const": {

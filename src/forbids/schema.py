@@ -1,11 +1,14 @@
-import keyword
-import bids.layout
-import logging
-from typing import Annotated, Literal, Union, Tuple, Iterator
-from dataclasses import asdict, dataclass, make_dataclass, field
-from apischema import discriminator
-from collections.abc import Sequence
+from __future__ import annotations
 
+import keyword
+import logging
+import re
+from collections.abc import Sequence
+from dataclasses import asdict, dataclass, field, make_dataclass
+from typing import Annotated, Any, Iterator, Literal, NewType, Tuple, Union
+
+import bids.layout
+from apischema import discriminator, schema
 
 FORBIDS_SCHEMA_FOLDER = ".forbids"
 
@@ -15,16 +18,34 @@ FORBIDS_SCHEMA_FOLDER = ".forbids"
 ALT_ENTITIES = ["reconstruction"]
 
 
+def tagpreset2type(tag: str, tag_preset: str, value: Any):
+    if tag_preset == "=":
+        if isinstance(value, list):
+            return Tuple[*[Literal[vv] for vv in value]]
+        else:
+            return Literal[value]
+    elif tag_preset == "*":
+        print("here")
+        return type(value)
+    elif tag_preset.startswith("~="):
+        tag = NewType(tag, type(value))
+        tol = float(tag_preset[2:])
+        schema(min=value - tol, max=value + tol)(tag)
+        return tag
+    elif tag_preset.startswith("r"):
+        tag = NewType(tag, type(value))  # likely a string, check if this need enforcement
+        schema(pattern=re.compile(tag_preset[1:]))(tag)
+        return tag
+
+
 def dict2schemaprops(sidecar: dict, config_props: dict) -> Iterator:
     for k, v in sidecar.items():
         if k in config_props:
             k2 = k + ("__" if k in keyword.kwlist else "")
             if isinstance(config_props[k], dict):
                 yield k2, sidecar2schema(v, config_props[k], k), field()
-            elif isinstance(v, list):
-                yield k2, Tuple[*[Literal[vv] for vv in v]], field()
             else:
-                yield k2, Literal[v], field()
+                yield k2, *tagpreset2type(k, config_props[k], v)
 
 
 def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str):
@@ -47,11 +68,21 @@ def sidecars2unionschema(
     for sc in sidecars:
         logging.info(f"generating schema from {sc.path}")
         metas = sc.get_dict()
-        discriminating_values = [metas.get(df) for df in discriminating_fields if df in metas]
-        subschema_name = schema_name + "-".join(discriminating_values)
+        sc_main_discriminating_value = metas.get(discriminating_fields[0], None)
+        if not sc_main_discriminating_value:
+            raise RuntimeError(f"sidecar {sc} do no contains discrinating value {discriminating_fields[0]}")
+        sc_discriminating_values = [metas.get(df) for df in discriminating_fields if df in metas]
+        subschema_name = schema_name + "-".join(sc_discriminating_values)
         while subschema_name in subschemas:
             subschema_name = subschema_name + "_copy"
-        subschemas[subschema_name] = sidecar2schema(metas, config_props, subschema_name)
+        subschema = sidecar2schema(metas, config_props, subschema_name)
+        if sc_main_discriminating_value in subschemas:
+            if subschema == subschemas[sc_main_discriminating_value]:
+                continue
+            else:
+                raise RuntimeError(f"cannot reconcile 2 schemas with same discriminating value")
+        else:
+            subschemas[sc_main_discriminating_value] = subschema
 
     if len(subschemas) == 1:
         return subschemas[subschema_name]
