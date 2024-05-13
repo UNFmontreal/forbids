@@ -1,15 +1,18 @@
 {
     "instrument": {
         "uid_tags": [
-            "DeviceSerialNumber",
-            "StationName"
+            "DeviceSerialNumber"
         ],
         "grouping_tags": [
+            "Manufacturer",
             "ManufacturersModelName",
-            "Manufacturer"
+            "ReceiveCoilName"
         ],
         "version_tags": [
             "SoftwareVersions"
+        ],
+        "other_tags": [
+            "StationName"
         ]
     },
     "properties": {
@@ -28,7 +31,7 @@
         "MRAcquisitionType": "=",
         "MagneticFieldStrength": "=",
         "Manufacturer": "=",
-        "ManufacturersModelName": "=",
+        "ManufacturersModelName": "*",
         "ParallelReductionFactorInPlane": "=",
         "PartialFourier": "=",
         "PatientPosition": "=",
@@ -37,7 +40,7 @@
         "PhaseResolution": "=",
         "PixelBandwidth": "=",
         "ProcedureStepDescription": "*",
-        "ProtocolName": "=",
+        "ProtocolName": "*",
         "PulseSequenceDetails": "=",
         "ReceiveCoilActiveElements": "=",
         "ReceiveCoilName": "=",

@@ -22,7 +22,7 @@ def parse_args():
     p.add_argument("command", help="init or validate")
     p.add_argument("bids_path", help="path to the BIDS dataset")
     p.add_argument(
-        "--uniform-session",
+        "--uniform-sessions",
         action="store_true",
         default=True,
         help="all sessions will have the same structure, forces to factor session entity",
@@ -38,7 +38,7 @@ def main() -> None:
     layout = bids.BIDSLayout(os.path.abspath(args.bids_path))
 
     if args.command == "init":
-        initialize(layout, session_uniform=args.uniform_session)
+        initialize(layout, uniform_sessions=args.uniform_sessions)
     elif args.command == "validate":
         no_error = True
         for error in validate(layout, subject=args.participant_label, session=args.session_label):

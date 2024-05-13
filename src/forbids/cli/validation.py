@@ -50,8 +50,7 @@ def validate(bids_layout: bids.BIDSLayout, **entities):
         elif num_sidecars > max_runs:
             yield BIDSFileError("Expected at most {max_runs} runs for {ref_sidecar}, found {num_sidecars}")
 
-        validator_cls = jsonschema.validators.validator_for(sidecar_schema)
-        validator = validator_cls(sidecar_schema)
+        validator = schema.get_validator(sidecar_schema)
 
         for sidecar in sidecars_to_validate:
             if sidecar in all_sidecars:

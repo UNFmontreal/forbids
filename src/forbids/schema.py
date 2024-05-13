@@ -8,7 +8,9 @@ from dataclasses import asdict, dataclass, field, make_dataclass
 from typing import Annotated, Any, Iterator, Literal, NewType, Tuple, Union
 
 import bids.layout
+import jsonschema
 from apischema import discriminator, schema
+from apischema.json_schema import deserialization_schema
 
 FORBIDS_SCHEMA_FOLDER = ".forbids"
 
@@ -76,55 +78,46 @@ def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str):
     return make_dataclass(subschema_name, fields=list(dict2schemaprops(sidecar, config_props, subschema_name)))
 
 
+def get_validator(sidecar_schema: dict) -> jsonschema.validators._Validator:
+    validator_cls = jsonschema.validators.validator_for(sidecar_schema)
+    return validator_cls(sidecar_schema)
+
+
 def sidecars2unionschema(
-    sidecars: list[bids.layout.BIDSJSONFile],
+    sidecars_groups: dict[Any, list[bids.layout.BIDSJSONFile]],
     bids_layout: bids.BIDSLayout,
-    discriminating_fields: list[str],
     config_props: dict,
+    series_entities: dict,
     factor_entities: tuple = ("subject", "run"),
 ) -> Annotated:
-    # from a set of sidecars from different scanners generate a meta-schema
+    # from a set of grouped sidecars from different scanners generate a meta-schema
 
-    #
-    series_entities = [{k: v for k, v in sc.entities.items() if k not in factor_entities} for sc in sidecars]
-    # TODO: not assume we have exact entities set for all sidecars
-    # skip validation for now, doesn't work with UNIT1
-    schema_name = bids_layout.build_path(series_entities[0], absolute_paths=False, validate=False)
-    subschemas = {}
-    subschemas_metas = {}
-    for sc in sidecars:
+    schema_name = bids_layout.build_path(series_entities, absolute_paths=False)
+    subschemas = []
+    for keys, sidecars in sidecars_groups:
+        sidecars = list(sidecars)
+        # generate sidecar from first examplar
+        sc = sidecars[0]
         logging.info(f"generating schema from {sc.path}")
         metas = sc.get_dict()
-        sc_main_discriminating_value = metas.get(discriminating_fields[0], None)
-        if not sc_main_discriminating_value:
-            raise RuntimeError(f"sidecar {sc} do no contains discrinating value {discriminating_fields[0]}")
-        sc_discriminating_values = [metas[df].replace(".", "_") for df in discriminating_fields if df in metas]
-        subschema_name = schema_name + "-".join(sc_discriminating_values)
+        subschema_name = schema_name + "-".join([k.replace(".", "_") for k in keys])
         # while subschema_name in subschemas:
         #    subschema_name = subschema_name + "_copy"
         subschema = sidecar2schema(metas, config_props, subschema_name)
-        if sc_main_discriminating_value in subschemas:
-            logging.debug(
-                f"{discriminating_fields[0]}: {sc_main_discriminating_value} -------- {sc_discriminating_values}"
-            )
-            match_discriminating_values = [
-                subschemas_metas[sc_main_discriminating_value][df].replace(".", "_")
-                for df in discriminating_fields
-                if df in metas
-            ]
-            logging.debug(str(match_discriminating_values))
-            if compare_schema(subschema, subschemas[sc_main_discriminating_value]):
-                continue
-            else:
-                print(f"cannot reconcile 2 schemas with same discriminating value")
-        else:
-            subschemas[sc_main_discriminating_value] = subschema
-            subschemas_metas[sc_main_discriminating_value] = metas
+        # check if we can apply the schema from 1st sidecar to the others:
+        validator = get_validator(deserialization_schema(subschema, additional_properties=True))
+        for sidecar in sidecars:
+            logging.info(f"validating schema from {sidecar.path}")
+            # validate or raise
+            validator.validate(sidecar.get_dict())
 
+        subschemas.append(subschema)
+
+    # if homogeneous (eg. single-site or single-vendor)
     if len(subschemas) == 1:
-        return subschemas[subschema_name]
+        return subschemas[0]
 
-    UnionModel = Annotated[Union[tuple(subschemas.values())], discriminator(discriminating_fields[0], subschemas)]
+    UnionModel = Annotated[Union[tuple(subschemas)], discriminator(keys, subschemas)]
 
     return UnionModel
 
