@@ -1,14 +1,21 @@
 {
-    "instrument_tags": [
-        "ManufacturersModelName",
-        "Manufacturer",
-        "StationName",
-        "SoftwareVersion"
-    ],
+    "instrument": {
+        "uid_tags": [
+            "DeviceSerialNumber",
+            "StationName"
+        ],
+        "grouping_tags": [
+            "ManufacturersModelName",
+            "Manufacturer"
+        ],
+        "version_tags": [
+            "SoftwareVersions"
+        ]
+    },
     "properties": {
         "AcquisitionMatrixPE": "=",
         "BaseResolution": "=",
-        "BodyPartExamined": "=",
+        "BodyPartExamined": "*",
         "CoilString": "=",
         "DeviceSerialNumber": "*",
         "DwellTime": "=",
@@ -43,7 +50,7 @@
         "SequenceVariant": "=",
         "SeriesDescription": "=",
         "SliceThickness": "=",
-        "SoftwareVersions": "=",
+        "SoftwareVersions": "*",
         "StationName": "*",
         "dcmmeta_shape": "=",
         "global": {

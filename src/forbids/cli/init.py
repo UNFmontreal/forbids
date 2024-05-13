@@ -30,6 +30,15 @@ def get_config(datatype):
 
 
 def initialize(bids_layout: bids.BIDSLayout, session_uniform: bool = False) -> None:
+
+    all_datatypes = bids_layout.get_datatype()
+
+    for datatype in all_datatypes:
+        config = get_config(datatype)
+
+        unique_instrument = bids_layout.__getattr__(f"get_{config['instrument']['uid_tags'][0]}")()
+        instrument_models = bids_layout.__getattr__(f"get_{config['instrument']['grouping_tags'][0]}")()
+
     all_subjects = bids_layout.get_subjects()
     # get all jsons for a single subject
     all_sample_jsons = bids_layout.get(subject=all_subjects[0], extension=".json")
@@ -46,7 +55,6 @@ def initialize(bids_layout: bids.BIDSLayout, session_uniform: bool = False) -> N
         query_entities.pop("subject")
 
         all_subjects_jsons = bids_layout.get(**query_entities)
-        config = get_config(entities["datatype"])
 
         sidecar_schema = schema.sidecars2unionschema(
             all_subjects_jsons,
