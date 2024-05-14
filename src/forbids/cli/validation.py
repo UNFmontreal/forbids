@@ -58,8 +58,7 @@ def validate(bids_layout: bids.BIDSLayout, **entities):
             else:
                 logging.error("an error occurred")
             logging.info(f"validating {sidecar.path}")
-            # rename conflictual keywords as the schema was created
-            sidecar_content = {k + ("__" if k in keyword.kwlist else ""): v for k, v in sidecar.get_dict().items()}
-            yield from validator.iter_errors(sidecar_content)
+            sidecar_data = schema.prepare_metadata(sidecar, bidsfile_constraints["instrument_tags"])
+            yield from validator.iter_errors(sidecar_data)
     for extra_sidecar in all_sidecars:
         yield BIDSExtraError(f"Extra BIDS file{extra_sidecar.path}")

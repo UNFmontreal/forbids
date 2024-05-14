@@ -88,10 +88,12 @@ def generate_series_model(
 
         non_null_entities = {k: v for k, v in series_entities.items() if v not in bids.layout.Query}
         series_sidecars = bids_layout.get(**series_entities)
-        sidecars_by_instrument_group = itertools.groupby(
-            series_sidecars,
-            lambda x: tuple(x.get_dict().get(instr_tag, "unknown") for instr_tag in instrument_query_tags),
-        )
+        sidecars_by_instrument_group = {}
+        for sc in series_sidecars:
+            instr_grp = tuple(
+                (instr_tag, sc.get_dict().get(instr_tag, "unknown")) for instr_tag in instrument_query_tags
+            )
+            sidecars_by_instrument_group[instr_grp] = sidecars_by_instrument_group.get(instr_grp, []) + [sc]
         try:
             sidecar_schema = schema.sidecars2unionschema(
                 sidecars_by_instrument_group,
@@ -110,6 +112,7 @@ def generate_series_model(
         os.makedirs(os.path.dirname(schema_path_abs), exist_ok=True)
 
         json_schema = deserialization_schema(sidecar_schema, additional_properties=True)
+        json_schema["bids"] = {"instrument_tags": instrument_query_tags}
         with open(schema_path_abs, "wt") as fd:
             json.dump(json_schema, fd, indent=2)
 

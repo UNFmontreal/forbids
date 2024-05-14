@@ -94,22 +94,23 @@ def sidecars2unionschema(
 
     schema_name = bids_layout.build_path(series_entities, absolute_paths=False)
     subschemas = []
-    for keys, sidecars in sidecars_groups:
+    for keys, sidecars in sidecars_groups.items():
+        instrument_tags = [k[0] for k in keys]
         sidecars = list(sidecars)
         # generate sidecar from first examplar
         sc = sidecars[0]
         logging.info(f"generating schema from {sc.path}")
-        metas = sc.get_dict()
-        subschema_name = schema_name + "-".join([k.replace(".", "_") for k in keys])
+        metas = prepare_metadata(sc, instrument_tags)
+        subschema_name = schema_name + "-".join([k.replace(".", "_") for t, k in keys])
         # while subschema_name in subschemas:
         #    subschema_name = subschema_name + "_copy"
         subschema = sidecar2schema(metas, config_props, subschema_name)
         # check if we can apply the schema from 1st sidecar to the others:
         validator = get_validator(deserialization_schema(subschema, additional_properties=True))
-        for sidecar in sidecars:
+        for sidecar in sidecars[1:]:
             logging.info(f"validating schema from {sidecar.path}")
             # validate or raise
-            validator.validate(sidecar.get_dict())
+            validator.validate(prepare_metadata(sidecar, instrument_tags))
 
         subschemas.append(subschema)
 
@@ -117,7 +118,9 @@ def sidecars2unionschema(
     if len(subschemas) == 1:
         return subschemas[0]
 
-    UnionModel = Annotated[Union[tuple(subschemas)], discriminator(keys, subschemas)]
+    UnionModel = Annotated[
+        Union[tuple(subschemas)], discriminator("__instrument__", {sc.__name__: sc for sc in subschemas})
+    ]
 
     return UnionModel
 
@@ -139,3 +142,13 @@ def compare_schema(sc1: dataclass, sc2: dataclass) -> bool:
                 logging.debug(str((prop, sc1_props[prop].type, sc2_props[prop].type)))
                 match = False
     return match
+
+
+def prepare_metadata(
+    sidecar,
+    instrument_tags,
+):
+    # rename conflictual keywords as the schema was created
+    sidecar_data = {k + ("__" if k in keyword.kwlist else ""): v for k, v in sidecar.get_dict().items()}
+    sidecar_data["__instrument__"] = [sidecar_data.get(instr_tag, None) for instr_tag in instrument_tags]
+    return sidecar_data

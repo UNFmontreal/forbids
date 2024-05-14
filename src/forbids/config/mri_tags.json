@@ -51,7 +51,7 @@
         "ScanningSequence": "=",
         "SequenceName": "=",
         "SequenceVariant": "=",
-        "SeriesDescription": "=",
+        "SeriesDescription": "*",
         "SliceThickness": "=",
         "SoftwareVersions": "*",
         "StationName": "*",
