@@ -42,7 +42,7 @@
         "ProcedureStepDescription": "*",
         "ProtocolName": "*",
         "PulseSequenceDetails": "=",
-        "ReceiveCoilActiveElements": "=",
+        "ReceiveCoilActiveElements": "*",
         "ReceiveCoilName": "=",
         "ReconMatrixPE": "=",
         "RefLinesPE": "=",
