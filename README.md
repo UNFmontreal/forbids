@@ -1,4 +1,4 @@
-# forBIDS: a protocol compliance check
+# ![forBIDS logo](docs/static/forbids_logo.png) forBIDS: a protocol compliance check
 
 forBIDS aims to be a tool for BIDS that forbids deviation from a established acquisition protocol.
 
