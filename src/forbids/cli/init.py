@@ -38,6 +38,10 @@ def initialize(
     uniform_sessions: bool = False,
     instrument_grouping_tags: list = [],
 ) -> None:
+    # generates schemas from examplar data for all unique set of entities
+    # (but factoring subject, run and session if uniform_sessions)
+    # attempts to group examplar data by shared instrument tags going from coarser to finer grouping
+    # if uniform_instruments is false, it also allows to group per unique intruments
 
     all_datatypes = bids_layout.get_datatype()
 
@@ -70,13 +74,20 @@ def generate_series_model(
     uniform_sessions: bool = True,
     **series_entities: dict,
 ):
+    # generates schemas from examplar data for single set of entities describing the "series"
+    # attempts to group examplar data by shared instrument tags going from coarser to finer grouping
+    # if uniform_instruments is false, it also allows to group per unique intruments
 
     config = get_config(series_entities.get("datatype"))
+    grouping_tags = config["instrument"]["grouping_tags"].copy()
+    if not uniform_instruments:
+        # add instrument-uid based grouping as the last resort
+        grouping_tags.extend(config["instrument"]["uid_tags"])
 
     # list all unique instruments and models for this datatype
     # unique_instruments = bids_layout.__getattr__(f"get_{config['instrument']['uid_tags'][0]}")(**series_entities)
     instrument_groups = OrderedDict(
-        {tag: bids_layout.__getattr__(f"get_{tag}")(**series_entities) for tag in config["instrument"]["grouping_tags"]}
+        {tag: bids_layout.__getattr__(f"get_{tag}")(**series_entities) for tag in grouping_tags}
     )
 
     instrument_query_tags = []
@@ -89,12 +100,14 @@ def generate_series_model(
         non_null_entities = {k: v for k, v in series_entities.items() if v not in bids.layout.Query}
         series_sidecars = bids_layout.get(**series_entities)
         sidecars_by_instrument_group = {}
+        # groups sidecars by instrument tags
         for sc in series_sidecars:
             instr_grp = tuple(
                 (instr_tag, sc.get_dict().get(instr_tag, "unknown")) for instr_tag in instrument_query_tags
             )
             sidecars_by_instrument_group[instr_grp] = sidecars_by_instrument_group.get(instr_grp, []) + [sc]
         try:
+            # attempt to generate the schema
             sidecar_schema = schema.sidecars2unionschema(
                 sidecars_by_instrument_group,
                 bids_layout=bids_layout,
@@ -106,54 +119,26 @@ def generate_series_model(
             logging.warn(f"failed to group with {instrument_query_tags}")
             logging.warn(e)
             continue
+        # one grouping scheme worked !
         series_entities["subject"] = "ref"
+
+        # generate paths and folder
         schema_path = bids_layout.build_path(non_null_entities, absolute_paths=False)
         schema_path_abs = os.path.join(bids_layout.root, schema.FORBIDS_SCHEMA_FOLDER, schema_path)
         os.makedirs(os.path.dirname(schema_path_abs), exist_ok=True)
 
+        # serialize dataclass to json-schema, TODO: better handle serialization errors
         json_schema = deserialization_schema(sidecar_schema, additional_properties=True)
-        json_schema["bids"] = {"instrument_tags": instrument_query_tags}
+        # add BIDS custom json structure
+        # TODO: set run number reqs semi-automatically, add tags based on examplar data
+        json_schema["bids"] = {
+            "instrument_tags": instrument_query_tags,
+            "optional": False,
+            "min_runs": 1,
+            "max_runs": 1,
+        }
         with open(schema_path_abs, "wt") as fd:
             json.dump(json_schema, fd, indent=2)
 
         logging.info("Successfully generated schema")
         break
-
-
-def trash():
-    all_subjects = bids_layout.get_subjects()
-    # get all jsons for a single subject
-    all_sample_jsons = bids_layout.get(subject=all_subjects[0], extension=".json")
-
-    # create union schema across examplar subject for each BIDS entries
-    for sample_json in all_sample_jsons:
-        entities = sample_json.entities.copy()
-        if entities["suffix"] in ["scans"]:
-            continue
-        query_entities = entities.copy()
-        for entity in schema.ALT_ENTITIES:
-            if entity not in query_entities:
-                query_entities[entity] = bids.layout.Query.NONE
-        query_entities.pop("subject")
-
-        all_subjects_jsons = bids_layout.get(**query_entities)
-
-        sidecar_schema = schema.sidecars2unionschema(
-            all_subjects_jsons,
-            bids_layout=bids_layout,
-            discriminating_fields=config["instrument_tags"],
-            config_props=config["properties"],
-            factor_entities=("subject", "run") + ("session",) if uniform_sessions else tuple(),
-        )
-
-        entities["subject"] = "ref"
-        if uniform_sessions:
-            entities.pop("session", None)
-        schema_path = bids_layout.build_path(entities, absolute_paths=False)
-        schema_path_abs = os.path.join(bids_layout.root, schema.FORBIDS_SCHEMA_FOLDER, schema_path)
-        os.makedirs(os.path.dirname(schema_path_abs), exist_ok=True)
-
-        json_schema = deserialization_schema(sidecar_schema, additional_properties=True)
-        with open(schema_path_abs, "wt") as fd:
-            json.dump(json_schema, fd, indent=2)
-    logging.info("Successfully generated schema")
