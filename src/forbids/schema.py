@@ -148,7 +148,10 @@ def prepare_metadata(
     sidecar,
     instrument_tags,
 ):
+    # prepares sidecar data for use with json_schema
+
     # rename conflictual keywords as the schema was created
     sidecar_data = {k + ("__" if k in keyword.kwlist else ""): v for k, v in sidecar.get_dict().items()}
+    # create an aggregate tag of all schema-defined instrument tags
     sidecar_data["__instrument__"] = [sidecar_data.get(instr_tag, None) for instr_tag in instrument_tags]
     return sidecar_data

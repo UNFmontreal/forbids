@@ -20,6 +20,7 @@ class BIDSExtraError(ValidationError):
 
 
 def validate(bids_layout: bids.BIDSLayout, **entities):
+    # validates the data specified by entities using the schema present in the `.forbids` folder
 
     ref_layout = bids.BIDSLayout(os.path.join(bids_layout.root, schema.FORBIDS_SCHEMA_FOLDER), validate=False)
 

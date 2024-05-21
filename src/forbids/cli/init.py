@@ -36,12 +36,13 @@ def initialize(
     bids_layout: bids.BIDSLayout,
     uniform_instruments: bool = True,
     uniform_sessions: bool = False,
-    instrument_grouping_tags: list = [],
+    version_specific: bool = False,
+    instrument_grouping_tags: tuple = tuple(),
 ) -> None:
     # generates schemas from examplar data for all unique set of entities
     # (but factoring subject, run and session if uniform_sessions)
     # attempts to group examplar data by shared instrument tags going from coarser to finer grouping
-    # if uniform_instruments is false, it also allows to group per unique intruments
+    # if uniform_instruments is false, it also allows to group per unique instruments
 
     all_datatypes = bids_layout.get_datatype()
 
@@ -65,24 +66,33 @@ def initialize(
                 if entity not in series_entities:
                     series_entities[entity] = bids.layout.Query.NONE
             logging.info(series_entities)
-            generate_series_model(bids_layout, uniform_instruments=uniform_instruments, **series_entities)
+            generate_series_model(
+                bids_layout,
+                uniform_instruments=uniform_instruments,
+                version_specific=version_specific,
+                **series_entities,
+            )
 
 
 def generate_series_model(
     bids_layout: bids.BIDSLayout,
     uniform_instruments: bool = True,
     uniform_sessions: bool = True,
+    version_specific: bool = False,
     **series_entities: dict,
 ):
     # generates schemas from examplar data for single set of entities describing the "series"
     # attempts to group examplar data by shared instrument tags going from coarser to finer grouping
-    # if uniform_instruments is false, it also allows to group per unique intruments
+    # if uniform_instruments is false, it also allows to group per unique instruments
 
     config = get_config(series_entities.get("datatype"))
     grouping_tags = config["instrument"]["grouping_tags"].copy()
     if not uniform_instruments:
         # add instrument-uid based grouping as the last resort
         grouping_tags.extend(config["instrument"]["uid_tags"])
+    if version_specific:
+        # add version-tag based grouping as the last resort
+        grouping_tags.extend(config["instrument"]["version_tags"])
 
     # list all unique instruments and models for this datatype
     # unique_instruments = bids_layout.__getattr__(f"get_{config['instrument']['uid_tags'][0]}")(**series_entities)
@@ -116,8 +126,8 @@ def generate_series_model(
                 factor_entities=("subject", "run") + ("session",) if uniform_sessions else tuple(),
             )
         except ValidationError as e:
-            logging.warn(f"failed to group with {instrument_query_tags}")
-            logging.warn(e)
+            logging.warning(f"failed to group with {instrument_query_tags}")
+            logging.warning(e)
             continue
         # one grouping scheme worked !
         series_entities["subject"] = "ref"
