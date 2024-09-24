@@ -62,7 +62,9 @@ def main() -> None:
         for error in validate(layout, subject=args.participant_label, session=args.session_label):
             no_error = False
             print(
-                f"{f"{error.__class__}" + '.'.join(error.absolute_path)} : {error.message} found {error.instance if 'required' not in error.message else ''}"
+                f"{error.__class__} + \
+                {'.'.join(error.absolute_path)} : \
+                {error.message} found {error.instance if 'required' not in error.message else ''}"
             )
         exit(0 if no_error else 1)
 
