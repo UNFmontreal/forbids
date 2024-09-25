@@ -15,7 +15,7 @@ class BIDSFileError(ValidationError):
     pass
 
 
-class BIDSExtraError(ValidationError):
+class BIDSUnexpectedFileError(ValidationError):
     pass
 
 
@@ -47,9 +47,9 @@ def validate(bids_layout: bids.BIDSLayout, **entities):
         min_runs = bidsfile_constraints.get("min_runs", 0)
         max_runs = bidsfile_constraints.get("max_runs", 1e10)
         if num_sidecars < min_runs:
-            yield BIDSFileError("Expected at least {min_runs} runs for {ref_sidecar}, found {num_sidecars}")
+            yield BIDSFileError(f"Expected at least {min_runs} runs for {ref_sidecar}, found {num_sidecars}")
         elif num_sidecars > max_runs:
-            yield BIDSFileError("Expected at most {max_runs} runs for {ref_sidecar}, found {num_sidecars}")
+            yield BIDSFileError(f"Expected at most {max_runs} runs for {ref_sidecar}, found {num_sidecars}")
 
         validator = schema.get_validator(sidecar_schema)
 
@@ -62,4 +62,4 @@ def validate(bids_layout: bids.BIDSLayout, **entities):
             sidecar_data = schema.prepare_metadata(sidecar, bidsfile_constraints["instrument_tags"])
             yield from validator.iter_errors(sidecar_data)
     for extra_sidecar in all_sidecars:
-        yield BIDSExtraError(f"Extra BIDS file{extra_sidecar.path}")
+        yield BIDSUnexpectedFileError(f"Extra BIDS file{extra_sidecar.path}")
