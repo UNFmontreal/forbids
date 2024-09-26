@@ -12,8 +12,9 @@ import jsonschema
 from apischema import discriminator, schema
 from apischema.json_schema import deserialization_schema
 
-FORBIDS_SCHEMA_FOLDER = ".forbids"
+lgr = logging.getLogger(__name__)
 
+FORBIDS_SCHEMA_FOLDER = ".forbids"
 
 # entities that differentiate files from the same series
 # where it might be None for one of the files.
@@ -94,13 +95,15 @@ def sidecars2unionschema(
 
     schema_name = bids_layout.build_path(series_entities, absolute_paths=False)
     subschemas = []
+    mapping_keys = []
     for keys, sidecars in sidecars_groups.items():
         instrument_tags = [k[0] for k in keys]
         sidecars = list(sidecars)
         # generate sidecar from first examplar
         sc = sidecars[0]
-        logging.info(f"generating schema from {sc.path}")
+        lgr.info(f"generating schema from {sc.relpath}")
         metas = prepare_metadata(sc, instrument_tags)
+        mapping_keys.append(metas['__instrument__'])
         subschema_name = schema_name + "-".join([k.replace(".", "_") for t, k in keys])
         # while subschema_name in subschemas:
         #    subschema_name = subschema_name + "_copy"
@@ -108,7 +111,7 @@ def sidecars2unionschema(
         # check if we can apply the schema from 1st sidecar to the others:
         validator = get_validator(deserialization_schema(subschema, additional_properties=True))
         for sidecar in sidecars[1:]:
-            logging.info(f"validating schema from {sidecar.path}")
+            lgr.info(f"validating schema from {sidecar.relpath}")
             # validate or raise
             validator.validate(prepare_metadata(sidecar, instrument_tags))
 
@@ -119,7 +122,11 @@ def sidecars2unionschema(
         return subschemas[0]
 
     UnionModel = Annotated[
-        Union[tuple(subschemas)], discriminator("__instrument__", {sc.__name__: sc for sc in subschemas})
+        Union[tuple(subschemas)],
+        discriminator(
+            "__instrument__",
+#            {k :sc.__name__ for k, sc in zip(mapping_keys, subschemas)}
+        )
     ]
 
     return UnionModel
@@ -132,14 +139,14 @@ def compare_schema(sc1: dataclass, sc2: dataclass) -> bool:
     sc2_props = sc2.__dataclass_fields__
     sc1_props_keys = set(sc1_props.keys())
     sc2_props_keys = set(sc2_props.keys())
-    logging.debug(f"XOR: {set(sc1_props_keys).symmetric_difference(sc2_props_keys)}")
+    lgr.debug(f"XOR: {set(sc1_props_keys).symmetric_difference(sc2_props_keys)}")
     for prop in sc1_props_keys.intersection(sc2_props_keys):
         if isinstance(sc1_props[prop], type):
             match = compare_schema(sc1_props[prop], sc2_props[prop])
         t1, t2 = sc1_props[prop].type, sc2_props[prop].type
         if t1 != t2:
             if not hasattr(t1, "__supertype__") or t1.__supertype__ != t2.__supertype__:
-                logging.debug(str((prop, sc1_props[prop].type, sc2_props[prop].type)))
+                lgr.debug(str((prop, sc1_props[prop].type, sc2_props[prop].type)))
                 match = False
     return match
 
@@ -153,5 +160,6 @@ def prepare_metadata(
     # rename conflictual keywords as the schema was created
     sidecar_data = {k + ("__" if k in keyword.kwlist else ""): v for k, v in sidecar.get_dict().items()}
     # create an aggregate tag of all schema-defined instrument tags
-    sidecar_data["__instrument__"] = [sidecar_data.get(instr_tag, None) for instr_tag in instrument_tags]
+    sidecar_data["__instrument__"] = '-'.join([sidecar_data.get(instr_tag, None) for instr_tag in instrument_tags])
+    print(sidecar_data["__instrument__"])
     return sidecar_data

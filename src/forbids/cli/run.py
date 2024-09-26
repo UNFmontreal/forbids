@@ -7,14 +7,17 @@ import os
 import bids
 
 from .init import initialize
-from .validation import validate
+from .validation import validate, ValidationError
 
 DEBUG = bool(os.environ.get("DEBUG", False))
 if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
+    logging.root.setLevel(logging.DEBUG)
 else:
     logging.basicConfig(level=logging.INFO)
+    logging.root.setLevel(logging.INFO)
 
+lgr = logging.getLogger(__name__)
 
 def parse_args():
 
@@ -50,6 +53,8 @@ def main() -> None:
     args = parse_args()
     layout = bids.BIDSLayout(os.path.abspath(args.bids_path))
 
+    lgr.debug(f"running {args.command}")
+
     if args.command == "init":
         initialize(
             layout,
@@ -61,11 +66,17 @@ def main() -> None:
         no_error = True
         for error in validate(layout, subject=args.participant_label, session=args.session_label):
             no_error = False
-            print(
-                f"{error.__class__} + \
-                {'.'.join(error.absolute_path)} : \
-                {error.message} found {error.instance if 'required' not in error.message else ''}"
-            )
+            if isinstance(error, ValidationError):
+                lgr.error(
+                    "\n".join([f"{ec.json_path} {ec.message} found {ec.instance if not "required" in ec.message else ""}"
+                    for ec in error.context])
+                )
+            else:
+                lgr.error(
+                    f"{error.__class__.__name__} "
+                    f"{'.'.join(error.absolute_path)} : "
+                    f"{error.message} found {error.instance if 'required' not in error.message else ''}"
+                )
         exit(0 if no_error else 1)
 
 
