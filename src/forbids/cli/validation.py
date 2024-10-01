@@ -3,12 +3,12 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import  Any, List, Optional, Iterator
+from typing import Any, Iterator, List, Optional
 
 import bids
 import jsonschema.validators
-from jsonschema.exceptions import ValidationError
 from jsonschema._typing import Validator
+from jsonschema.exceptions import ValidationError
 
 from .. import schema
 
@@ -35,7 +35,6 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str|list]):
     ref_sidecars = ref_layout.get(session=[entities.get("session"), None], extension=".json")
 
     all_sidecars = bids_layout.get(extension=".json", **entities)
-    print(entities, len(all_sidecars))
 
     subjects = bids_layout.get_subject(subject = entities.pop('subject'))
 

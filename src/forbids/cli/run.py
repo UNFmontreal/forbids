@@ -7,14 +7,19 @@ import os
 import bids
 
 from .init import initialize
-from .validation import validate, ValidationError
+from .validation import BIDSFileError, ValidationError, validate
 
 DEBUG = bool(os.environ.get("DEBUG", False))
 if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
     logging.root.setLevel(logging.DEBUG)
+    root_handler = logging.root.handlers[0]
+    root_handler.setFormatter(logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s'))
 else:
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+        level=logging.INFO
+    )
     logging.root.setLevel(logging.INFO)
 
 lgr = logging.getLogger(__name__)
@@ -66,11 +71,9 @@ def main() -> None:
         no_error = True
         for error in validate(layout, subject=args.participant_label, session=args.session_label):
             no_error = False
-            if isinstance(error, ValidationError):
-                lgr.error(
-                    "\n".join([f"{ec.json_path} {ec.message} found {ec.instance if not "required" in ec.message else ""}"
-                    for ec in error.context])
-                )
+            if not isinstance(error, BIDSFileError):
+                lgr.error(error)
+
             else:
                 lgr.error(
                     f"{error.__class__.__name__} "
