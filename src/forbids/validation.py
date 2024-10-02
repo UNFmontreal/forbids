@@ -4,11 +4,17 @@ import logging
 import os
 
 import bids
+from jsonschema._utils import Unset
 from jsonschema.exceptions import ValidationError
 
-from .. import schema
+from . import schema
 
 lgr = logging.getLogger(__name__)
+
+
+class BIDSJSONError(ValidationError):
+    # class to represent BIDS metadata error
+    pass
 
 
 class BIDSFileError(ValidationError):
@@ -94,6 +100,32 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
                         lgr.error("an error occurred")
                     lgr.debug("validating %s", sidecar.relpath)
                     sidecar_data = schema.prepare_metadata(sidecar, bidsfile_constraints["instrument_tags"])
-                    yield from validator.iter_errors(sidecar_data)
+                    yield from add_path_note_to_error(validator, sidecar_data, sidecar.relpath)
     for extra_sidecar in all_sidecars:
         yield BIDSFileError("Unexpected BIDS file %s", extra_sidecar.relpath)
+
+
+def add_path_note_to_error(validator, sidecar_data, filepath):
+    for error in validator.iter_errors(sidecar_data):
+        error.add_note(filepath)
+        yield error
+
+
+def process_validation(layout, subject, session):
+    no_error = True
+    for error in validate(layout, subject=subject, session=session):
+        no_error = False
+
+        formatted_message = error.message
+        if len(error.path) == 0 and not isinstance(error.instance, Unset):
+            formatted_message = f"non-existing schema for instrument {error.instance['__instrument__']}"
+
+        lgr.error(
+            "%s %s %s : %s",
+            error.__class__.__name__,
+            error.__notes__[0] if hasattr(error, "__notes__") else "",
+            ".".join([str(e) for e in error.absolute_path]),
+            formatted_message,
+        )
+        lgr.debug(error)
+    return no_error

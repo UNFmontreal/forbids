@@ -6,8 +6,8 @@ import os
 
 import bids
 
-from .init import initialize
-from .validation import validate
+from ..init import initialize
+from ..validation import process_validation
 
 DEBUG = bool(os.environ.get("DEBUG", False))
 if DEBUG:
@@ -68,16 +68,7 @@ def main() -> None:
             version_specific=args.version_specific,
         )
     elif args.command == "validate":
-        no_error = True
-        for error in validate(layout, subject=args.participant_label, session=args.session_label):
-            no_error = False
-            lgr.error(
-                "%s %s : %s found %s",
-                error.__class__.__name__,
-                ".".join([str(e) for e in error.absolute_path]),
-                error.message,
-                error.instance if "required" not in error.message else "",
-            )
+        no_error = process_validation(layout, subject=args.participant_label, session=args.session_label)
         exit(0 if no_error else 1)
 
 

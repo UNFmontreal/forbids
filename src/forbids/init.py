@@ -13,7 +13,7 @@ import bids
 from apischema.json_schema import deserialization_schema
 from jsonschema.exceptions import ValidationError
 
-from .. import schema
+from . import schema
 
 configs = {}
 lgr = logging.getLogger(__name__)
