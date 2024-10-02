@@ -106,9 +106,8 @@ def generate_series_model(
     for instrument_tag, _ in instrument_groups.items():
         # cumulate instrument tags for query
         instrument_query_tags.append(instrument_tag)
-        # get all sidecars grouped by instrument tags
 
-        non_null_entities = {k: v for k, v in series_entities.items() if v not in bids.layout.Query}
+        non_null_entities = {k: v for k, v in series_entities.items() if not isinstance(v, bids.layout.Query)}
         series_sidecars = bids_layout.get(**series_entities)
         sidecars_by_instrument_group = {}
         # groups sidecars by instrument tags
@@ -128,9 +127,10 @@ def generate_series_model(
             )
         except ValidationError as error:
             lgr.warning(f"failed to group with {instrument_query_tags}")
+            lgr.info(error.absolute_path)
             lgr.warning(
                 f"{error.__class__.__name__} "
-                f"{'.'.join(error.absolute_path)} : "
+                f"{'.'.join([str(e) for e in error.absolute_path])} : "
                 f"{error.message} found {error.instance if 'required' not in error.message else ''}"
             )
             continue
