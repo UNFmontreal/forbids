@@ -53,6 +53,8 @@ def initialize(
     # group by instrument tags across subject, (session) and runs
     excl_ents = ["subject", "run"] + (["session"] if uniform_sessions else [])
 
+    successes = []
+
     for datatype in all_datatypes:
         lgr.info("processing %s", datatype)
         # list all unique sets of entities for this datatype
@@ -70,12 +72,14 @@ def initialize(
             for entity in schema.ALT_ENTITIES:
                 if entity not in series_entities:
                     series_entities[entity] = bids.layout.Query.NONE
-            generate_series_model(
+            success = generate_series_model(
                 bids_layout,
                 uniform_instruments=uniform_instruments,
                 version_specific=version_specific,
                 **series_entities,
             )
+            successes.append(success)
+    return all(successes)
 
 
 def generate_series_model(
@@ -161,6 +165,7 @@ def generate_series_model(
             json.dump(json_schema, fd, indent=2)
 
         lgr.info("Successfully generated schema with grouping %s", str(instrument_query_tags))
-        break
+        return True
     else:
-        raise RuntimeError("failed to generate")
+        lgr.error("failed to generate a schema for %s", str(series_entities))
+        return False

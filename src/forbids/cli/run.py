@@ -5,11 +5,13 @@ import logging
 import os
 
 import bids
+import coloredlogs
 
 from ..init import initialize
 from ..validation import process_validation
 
 DEBUG = bool(os.environ.get("DEBUG", False))
+coloredlogs.install()
 if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
     logging.root.setLevel(logging.DEBUG)
@@ -59,17 +61,18 @@ def main() -> None:
 
     args = parse_args()
     layout = bids.BIDSLayout(os.path.abspath(args.bids_path))
+    success = False
 
     if args.command == "init":
-        initialize(
+        success = initialize(
             layout,
             uniform_sessions=not args.varying_sessions,
             uniform_instruments=not args.scanner_specific,
             version_specific=args.version_specific,
         )
     elif args.command == "validate":
-        no_error = process_validation(layout, subject=args.participant_label, session=args.session_label)
-        exit(0 if no_error else 1)
+        success = process_validation(layout, subject=args.participant_label, session=args.session_label)
+    exit(0 if success else 1)
 
 
 if __name__ == "__main__":
