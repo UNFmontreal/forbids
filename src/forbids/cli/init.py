@@ -16,6 +16,7 @@ from .. import schema
 configs = {}
 lgr = logging.getLogger(__name__)
 
+
 def get_config(datatype):
     if datatype in ["anat", "func", "dwi", "swi", "fmap"]:
         modality = "mri"

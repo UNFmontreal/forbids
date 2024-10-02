@@ -23,7 +23,7 @@ dependencies = [
     "click",
     "pybids",
     "apischema",
-    "jsonschema"
+    "openapi-schema-validator"
 ]
 
 [project.scripts]

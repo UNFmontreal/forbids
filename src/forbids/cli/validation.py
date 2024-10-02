@@ -14,9 +14,12 @@ from .. import schema
 
 lgr = logging.getLogger(__name__)
 
+
 class BIDSFileError(ValidationError):
     # class to represent error of BIDS file missing or unexpected
     pass
+
+
 """
     def __init__(self, message, path=None, missing=True):
         self.path = path
@@ -25,8 +28,7 @@ class BIDSFileError(ValidationError):
 """
 
 
-
-def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str|list]):
+def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
     # validates the data specified by entities using the schema present in the `.forbids` folder
 
     ref_layout = bids.BIDSLayout(os.path.join(bids_layout.root, schema.FORBIDS_SCHEMA_FOLDER), validate=False)
@@ -36,7 +38,7 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str|list]):
 
     all_sidecars = bids_layout.get(extension=".json", **entities)
 
-    subjects = bids_layout.get_subject(subject = entities.pop('subject'))
+    subjects = bids_layout.get_subject(subject=entities.pop("subject"))
 
     is_multisession = len(bids_layout.get_session())
     is_session_specific = len(ref_layout.get_session())
@@ -46,9 +48,8 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str|list]):
     all_sidecars = bids_layout.get(
         extension=".json",
         subject=subjects,
-        session=entities['session'],
+        session=entities["session"],
     )
-
 
     for ref_sidecar in ref_sidecars:
         lgr.info(f"validating {ref_sidecar.relpath}")
@@ -61,10 +62,7 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str|list]):
 
         for subject in subjects:
             query_entities["subject"] = subject
-            sessions = bids_layout.get_session(
-                subject = subject,
-                session = entities["session"]
-            )
+            sessions = bids_layout.get_session(subject=subject, session=entities["session"])
 
             for session in sessions:
                 query_entities["session"] = session
@@ -75,15 +73,19 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str|list]):
 
                 if not sidecars_to_validate and not bidsfile_constraints.get("optional", False):
                     yield BIDSFileError(f"{ref_sidecar.relpath} found no match")
-                    continue # no point going further
+                    continue  # no point going further
 
                 num_sidecars = len(sidecars_to_validate)
                 min_runs = bidsfile_constraints.get("min_runs", 0)
                 max_runs = bidsfile_constraints.get("max_runs", 1e10)
                 if num_sidecars < min_runs:
-                    yield BIDSFileError(f"Expected at least {min_runs} runs for {ref_sidecar.relpath}, found {num_sidecars}")
+                    yield BIDSFileError(
+                        f"Expected at least {min_runs} runs for {ref_sidecar.relpath}, found {num_sidecars}"
+                    )
                 elif num_sidecars > max_runs:
-                    yield BIDSFileError(f"Expected at most {max_runs} runs for {ref_sidecar.relpath}, found {num_sidecars}")
+                    yield BIDSFileError(
+                        f"Expected at most {max_runs} runs for {ref_sidecar.relpath}, found {num_sidecars}"
+                    )
 
                 for sidecar in sidecars_to_validate:
                     if sidecar in all_sidecars:

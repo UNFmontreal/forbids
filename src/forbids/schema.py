@@ -83,7 +83,7 @@ def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str):
 def get_validator(sidecar_schema: dict) -> jsonschema.validators._Validator:
     validator_cls = openapi_schema_validator.validators.OAS31Validator
     validator_cls.check_schema(sidecar_schema)
-    #validator_cls = jsonschema.validators.validator_for(sidecar_schema)
+    # validator_cls = jsonschema.validators.validator_for(sidecar_schema)
     return validator_cls(sidecar_schema)
 
 
@@ -96,7 +96,7 @@ def sidecars2unionschema(
 ) -> Annotated:
     # from a set of grouped sidecars from different scanners generate a meta-schema
 
-    schema_name = bids_layout.build_path(series_entities, absolute_paths=False)[:-5] + '-'
+    schema_name = bids_layout.build_path(series_entities, absolute_paths=False)[:-5] + "-"
 
     subschemas = []
     mapping_keys = []
@@ -107,9 +107,9 @@ def sidecars2unionschema(
         sc = sidecars[0]
         lgr.info(f"generating schema from {sc.relpath}")
         metas = prepare_metadata(sc, instrument_tags)
-        mapping_keys.append(metas['__instrument__'])
+        mapping_keys.append(metas["__instrument__"])
         subschema_name = schema_name + "".join([k.replace(".", "") for t, k in keys])
-        subschema_name = subschema_name.replace('_', "").replace('-',"")
+        subschema_name = subschema_name.replace("_", "").replace("-", "")
         # while subschema_name in subschemas:
         #    subschema_name = subschema_name + "_copy"
         subschema = sidecar2schema(metas, config_props, subschema_name)
@@ -130,8 +130,8 @@ def sidecars2unionschema(
         Union[tuple(subschemas)],
         discriminator(
             "__instrument__",
-#            {k :sc.__name__ for k, sc in zip(mapping_keys, subschemas)}
-        )
+            #            {k :sc.__name__ for k, sc in zip(mapping_keys, subschemas)}
+        ),
     ]
 
     return UnionModel
@@ -165,5 +165,5 @@ def prepare_metadata(
     # rename conflictual keywords as the schema was created
     sidecar_data = {k + ("__" if k in keyword.kwlist else ""): v for k, v in sidecar.get_dict().items()}
     # create an aggregate tag of all schema-defined instrument tags
-    sidecar_data["__instrument__"] = ''.join([sidecar_data.get(instr_tag, None) for instr_tag in instrument_tags])
+    sidecar_data["__instrument__"] = "".join([sidecar_data.get(instr_tag, None) for instr_tag in instrument_tags])
     return sidecar_data

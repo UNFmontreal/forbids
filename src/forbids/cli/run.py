@@ -14,15 +14,17 @@ if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
     logging.root.setLevel(logging.DEBUG)
     root_handler = logging.root.handlers[0]
-    root_handler.setFormatter(logging.Formatter('%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s'))
+    root_handler.setFormatter(
+        logging.Formatter("%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s")
+    )
 else:
     logging.basicConfig(
-        format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-        level=logging.INFO
+        format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s", level=logging.INFO
     )
     logging.root.setLevel(logging.INFO)
 
 lgr = logging.getLogger(__name__)
+
 
 def parse_args():
 
@@ -65,7 +67,7 @@ def main() -> None:
             layout,
             uniform_sessions=not args.varying_sessions,
             uniform_instruments=not args.scanner_specific,
-            version_specific=args.version_specific
+            version_specific=args.version_specific,
         )
     elif args.command == "validate":
         no_error = True

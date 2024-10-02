@@ -24,3 +24,7 @@ def test_tagpreset2type():
         "type": "string",
         "pattern": "^[aA]{3}[0-4]$",
     }
+
+
+def test_dict2schemaprops():
+    pass
