@@ -80,6 +80,7 @@ def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str):
 
 
 def get_validator(sidecar_schema: dict) -> jsonschema.validators._Validator:
+    # return OpenApi validator for use of discriminator feature
     validator_cls = openapi_schema_validator.validators.OAS31Validator
     validator_cls.check_schema(sidecar_schema)
     # validator_cls = jsonschema.validators.validator_for(sidecar_schema)
@@ -137,6 +138,7 @@ def sidecars2unionschema(
 
 
 def compare_schema(sc1: dataclass, sc2: dataclass) -> bool:
+    # compares 2 dataclasses, not really useful now
     match = True
 
     sc1_props = sc1.__dataclass_fields__

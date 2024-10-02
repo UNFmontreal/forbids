@@ -106,12 +106,18 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
 
 
 def add_path_note_to_error(validator, sidecar_data, filepath):
+    # add the path to the json files that triggers the error
+    # for better reporting in process_validation
+
     for error in validator.iter_errors(sidecar_data):
         error.add_note(filepath)
         yield error
 
 
 def process_validation(layout, subject, session):
+    # run validation on the BIDS layout and specified subject/session
+    # format errors for not-to-verbose pretty printing
+
     no_error = True
     for error in validate(layout, subject=subject, session=session):
         no_error = False
