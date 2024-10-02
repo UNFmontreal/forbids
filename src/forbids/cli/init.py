@@ -133,9 +133,9 @@ def generate_series_model(
             lgr.warning(
                 "%s %s : %s found %s",
                 error.__class__.__name__,
-                '.'.join([str(e) for e in error.absolute_path]),
+                ".".join([str(e) for e in error.absolute_path]),
                 error.message,
-                error.instance if 'required' not in error.message else '',
+                error.instance if "required" not in error.message else "",
             )
             continue  # move on to next instrument grouping
 

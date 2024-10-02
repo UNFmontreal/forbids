@@ -56,15 +56,12 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
             if is_session_specific:
                 sessions = [query_entities["session"]]
             else:
-                sessions = bids_layout.get_session(subject=subject, session=entities["session"]) or \
-                    [bids.layout.Query.NONE]
+                sessions = bids_layout.get_session(subject=subject, session=entities["session"]) or [
+                    bids.layout.Query.NONE
+                ]
 
             for session in sessions:
-                lgr.info(
-                    "validating sub-%s %s",
-                    subject,
-                    'ses-' + session if isinstance(session, str) else ''
-                )
+                lgr.info("validating sub-%s %s", subject, "ses-" + session if isinstance(session, str) else "")
                 query_entities["session"] = session
                 non_null_entities = {k: v for k, v in query_entities.items() if not isinstance(v, bids.layout.Query)}
                 expected_sidecar = bids_layout.build_path(non_null_entities, absolute_paths=False)

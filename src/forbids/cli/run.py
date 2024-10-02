@@ -74,9 +74,9 @@ def main() -> None:
             lgr.error(
                 "%s %s : %s found %s",
                 error.__class__.__name__,
-                '.'.join([str(e) for e in error.absolute_path]),
+                ".".join([str(e) for e in error.absolute_path]),
                 error.message,
-                error.instance if 'required' not in error.message else '',
+                error.instance if "required" not in error.message else "",
             )
         exit(0 if no_error else 1)
 
