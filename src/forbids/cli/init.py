@@ -48,6 +48,7 @@ def initialize(
 
     all_datatypes = bids_layout.get_datatype()
 
+    # group by instrument tags across subject, (session) and runs
     excl_ents = ["subject", "run"] + (["session"] if uniform_sessions else [])
 
     for datatype in all_datatypes:
@@ -127,18 +128,17 @@ def generate_series_model(
             )
         except ValidationError as error:
             lgr.warning(f"failed to group with {instrument_query_tags}")
-            lgr.info(error.absolute_path)
             lgr.warning(
                 f"{error.__class__.__name__} "
                 f"{'.'.join([str(e) for e in error.absolute_path])} : "
                 f"{error.message} found {error.instance if 'required' not in error.message else ''}"
             )
-            continue
+            continue  # move on to next instrument grouping
 
-        # one grouping scheme worked !
-        non_null_entities["subject"] = "ref"
+        # one instrument grouping scheme worked!
 
         # generate paths and folder
+        non_null_entities["subject"] = "ref"
         schema_path = bids_layout.build_path(non_null_entities, absolute_paths=False)
         schema_path_abs = os.path.join(bids_layout.root, schema.FORBIDS_SCHEMA_FOLDER, schema_path)
         os.makedirs(os.path.dirname(schema_path_abs), exist_ok=True)
@@ -158,3 +158,5 @@ def generate_series_model(
 
         lgr.info(f"Successfully generated schema with grouping {instrument_query_tags}")
         break
+    else:
+        raise RuntimeError("failed to generate")

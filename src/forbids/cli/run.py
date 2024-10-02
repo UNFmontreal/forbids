@@ -73,15 +73,11 @@ def main() -> None:
         no_error = True
         for error in validate(layout, subject=args.participant_label, session=args.session_label):
             no_error = False
-            if not isinstance(error, BIDSFileError):
-                lgr.error(error)
-
-            else:
-                lgr.error(
-                    f"{error.__class__.__name__} "
-                    f"{'.'.join(error.absolute_path)} : "
-                    f"{error.message} found {error.instance if 'required' not in error.message else ''}"
-                )
+            lgr.error(
+                f"{error.__class__.__name__} "
+                f"{'.'.join([str(pp) for pp in error.absolute_path])} : "
+                f"{error.message} found {error.instance if 'required' not in error.message else ''}"
+            )
         exit(0 if no_error else 1)
 
 
