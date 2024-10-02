@@ -3,8 +3,7 @@ from __future__ import annotations
 import keyword
 import logging
 import re
-from collections.abc import Sequence
-from dataclasses import asdict, dataclass, field, make_dataclass
+from dataclasses import dataclass, make_dataclass
 from typing import Annotated, Any, Iterator, Literal, NewType, Tuple, Union
 
 import bids.layout
@@ -105,7 +104,7 @@ def sidecars2unionschema(
         sidecars = list(sidecars)
         # generate sidecar from first examplar
         sc = sidecars[0]
-        lgr.info(f"generating schema from {sc.relpath}")
+        lgr.info("generating schema from %s", sc.relpath)
         metas = prepare_metadata(sc, instrument_tags)
         mapping_keys.append(metas["__instrument__"])
         subschema_name = schema_name + "".join([k.replace(".", "") for t, k in keys])
@@ -116,7 +115,7 @@ def sidecars2unionschema(
         # check if we can apply the schema from 1st sidecar to the others:
         validator = get_validator(deserialization_schema(subschema, additional_properties=True))
         for sidecar in sidecars[1:]:
-            lgr.info(f"validating schema from {sidecar.relpath}")
+            lgr.info("validating schema from %s", sidecar.relpath)
             # validate or raise
             validator.validate(prepare_metadata(sidecar, instrument_tags))
 
@@ -144,7 +143,7 @@ def compare_schema(sc1: dataclass, sc2: dataclass) -> bool:
     sc2_props = sc2.__dataclass_fields__
     sc1_props_keys = set(sc1_props.keys())
     sc2_props_keys = set(sc2_props.keys())
-    lgr.debug(f"XOR: {set(sc1_props_keys).symmetric_difference(sc2_props_keys)}")
+    lgr.debug("XOR: %s", str(set(sc1_props_keys).symmetric_difference(sc2_props_keys)))
     for prop in sc1_props_keys.intersection(sc2_props_keys):
         if isinstance(sc1_props[prop], type):
             match = compare_schema(sc1_props[prop], sc2_props[prop])

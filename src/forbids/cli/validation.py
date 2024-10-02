@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-import keyword
 import logging
 import os
-from typing import Any, Iterator, List, Optional
 
 import bids
-import jsonschema.validators
-from jsonschema._typing import Validator
 from jsonschema.exceptions import ValidationError
 
 from .. import schema
@@ -18,14 +14,6 @@ lgr = logging.getLogger(__name__)
 class BIDSFileError(ValidationError):
     # class to represent error of BIDS file missing or unexpected
     pass
-
-
-"""
-    def __init__(self, message, path=None, missing=True):
-        self.path = path
-        self.missing = missing
-
-"""
 
 
 def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
@@ -52,7 +40,7 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
     )
 
     for ref_sidecar in ref_sidecars:
-        lgr.info(f"validating {ref_sidecar.entities}")
+        lgr.info("validating %s", str(ref_sidecar.relpath))
         # load the schema
         sidecar_schema = ref_sidecar.get_dict()
         bidsfile_constraints = sidecar_schema.pop("bids", dict())
@@ -65,10 +53,18 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
 
         for subject in subjects:
             query_entities["subject"] = subject
-            sessions = bids_layout.get_session(subject=subject, session=entities["session"]) or [bids.layout.Query.NONE]
+            if is_session_specific:
+                sessions = [query_entities["session"]]
+            else:
+                sessions = bids_layout.get_session(subject=subject, session=entities["session"]) or \
+                    [bids.layout.Query.NONE]
 
             for session in sessions:
-                lgr.info(f"validating sub-{subject} {'ses-'+ session if isinstance(session, str) else ''}")
+                lgr.info(
+                    "validating sub-%s %s",
+                    subject,
+                    'ses-' + session if isinstance(session, str) else ''
+                )
                 query_entities["session"] = session
                 non_null_entities = {k: v for k, v in query_entities.items() if not isinstance(v, bids.layout.Query)}
                 expected_sidecar = bids_layout.build_path(non_null_entities, absolute_paths=False)
@@ -78,7 +74,7 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
                 sidecars_to_validate = bids_layout.get(**query_entities)
 
                 if not sidecars_to_validate and not bidsfile_constraints.get("optional", False):
-                    yield BIDSFileError(f"{expected_sidecar}", instance="no match")
+                    yield BIDSFileError(f"{expected_sidecar}", "no match")
                     continue  # no point going further
 
                 num_sidecars = len(sidecars_to_validate)
@@ -99,9 +95,8 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
                         all_sidecars.remove(sidecar)
                     else:
                         lgr.error("an error occurred")
-                    lgr.debug(f"validating {sidecar.path}")
+                    lgr.debug("validating %s", sidecar.relpath)
                     sidecar_data = schema.prepare_metadata(sidecar, bidsfile_constraints["instrument_tags"])
                     yield from validator.iter_errors(sidecar_data)
     for extra_sidecar in all_sidecars:
-        relpath = extra_sidecar.path
-        yield BIDSFileError(f"Unexpected BIDS file {extra_sidecar.relpath}")
+        yield BIDSFileError("Unexpected BIDS file %s", extra_sidecar.relpath)

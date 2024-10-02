@@ -7,7 +7,7 @@ import os
 import bids
 
 from .init import initialize
-from .validation import BIDSFileError, ValidationError, validate
+from .validation import validate
 
 DEBUG = bool(os.environ.get("DEBUG", False))
 if DEBUG:
@@ -60,8 +60,6 @@ def main() -> None:
     args = parse_args()
     layout = bids.BIDSLayout(os.path.abspath(args.bids_path))
 
-    lgr.debug(f"running {args.command}")
-
     if args.command == "init":
         initialize(
             layout,
@@ -74,9 +72,11 @@ def main() -> None:
         for error in validate(layout, subject=args.participant_label, session=args.session_label):
             no_error = False
             lgr.error(
-                f"{error.__class__.__name__} "
-                f"{'.'.join([str(pp) for pp in error.absolute_path])} : "
-                f"{error.message} found {error.instance if 'required' not in error.message else ''}"
+                "%s %s : %s found %s",
+                error.__class__.__name__,
+                '.'.join([str(e) for e in error.absolute_path]),
+                error.message,
+                error.instance if 'required' not in error.message else '',
             )
         exit(0 if no_error else 1)
 
