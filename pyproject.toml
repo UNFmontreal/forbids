@@ -23,7 +23,8 @@ dependencies = [
     "click",
     "pybids",
     "apischema",
-    "jsonschema"
+    "openapi-schema-validator",
+    "coloredlogs"
 ]
 
 [project.scripts]

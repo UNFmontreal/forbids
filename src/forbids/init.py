@@ -1,6 +1,8 @@
+#   -------------------------------------------------------------
+#   Licensed under the MIT License. See LICENSE in project root for information.
+#   -------------------------------------------------------------
 from __future__ import annotations
 
-import itertools
 import json
 import logging
 import os
@@ -11,9 +13,10 @@ import bids
 from apischema.json_schema import deserialization_schema
 from jsonschema.exceptions import ValidationError
 
-from .. import schema
+from . import schema
 
 configs = {}
+lgr = logging.getLogger(__name__)
 
 
 def get_config(datatype):
@@ -26,9 +29,10 @@ def get_config(datatype):
         raise ValueError("unknown data type")
     if modality not in configs:
         with files("forbids").joinpath(f"config/{modality}_tags.json") as cfg_pth:
-            logging.debug(f"loading config {cfg_pth}")
+            lgr.debug("loading config %s", cfg_pth)
             with open(cfg_pth) as cfg_fd:
                 configs[modality] = json.load(cfg_fd)
+        configs[modality]["properties"]["__instrument__"] = "="
     return configs[modality]
 
 
@@ -46,10 +50,13 @@ def initialize(
 
     all_datatypes = bids_layout.get_datatype()
 
+    # group by instrument tags across subject, (session) and runs
     excl_ents = ["subject", "run"] + (["session"] if uniform_sessions else [])
 
+    successes = []
+
     for datatype in all_datatypes:
-        logging.info(f"processing {datatype}")
+        lgr.info("processing %s", datatype)
         # list all unique sets of entities for this datatype
         # should results in 1+ set per series, unless scanner differences requires separate series
         # or results in different number of output series from the same sequence (eg. rec- acq-)
@@ -65,13 +72,14 @@ def initialize(
             for entity in schema.ALT_ENTITIES:
                 if entity not in series_entities:
                     series_entities[entity] = bids.layout.Query.NONE
-            logging.info(series_entities)
-            generate_series_model(
+            success = generate_series_model(
                 bids_layout,
                 uniform_instruments=uniform_instruments,
                 version_specific=version_specific,
                 **series_entities,
             )
+            successes.append(success)
+    return all(successes)
 
 
 def generate_series_model(
@@ -97,17 +105,16 @@ def generate_series_model(
     # list all unique instruments and models for this datatype
     # unique_instruments = bids_layout.__getattr__(f"get_{config['instrument']['uid_tags'][0]}")(**series_entities)
     instrument_groups = OrderedDict(
-        {tag: bids_layout.__getattr__(f"get_{tag}")(**series_entities) for tag in grouping_tags}
+        {tag: getattr(bids_layout, f"get_{tag}")(**series_entities) for tag in grouping_tags}
     )
 
     instrument_query_tags = []
-    # try grouping from more global to finer, (eg. first manufacture, then scanner then scanner+coil, ...)
+    # try grouping from more global to finer, (eg. first manufacturer, then scanner, then scanner+coil, ...)
     for instrument_tag, _ in instrument_groups.items():
         # cumulate instrument tags for query
         instrument_query_tags.append(instrument_tag)
-        # get all sidecars grouped by instrument tags
 
-        non_null_entities = {k: v for k, v in series_entities.items() if v not in bids.layout.Query}
+        non_null_entities = {k: v for k, v in series_entities.items() if not isinstance(v, bids.layout.Query)}
         series_sidecars = bids_layout.get(**series_entities)
         sidecars_by_instrument_group = {}
         # groups sidecars by instrument tags
@@ -125,14 +132,21 @@ def generate_series_model(
                 series_entities=non_null_entities,
                 factor_entities=("subject", "run") + ("session",) if uniform_sessions else tuple(),
             )
-        except ValidationError as e:
-            logging.warning(f"failed to group with {instrument_query_tags}")
-            logging.warning(e)
-            continue
-        # one grouping scheme worked !
-        series_entities["subject"] = "ref"
+        except ValidationError as error:
+            lgr.warning("failed to group with %s", str(instrument_query_tags))
+            lgr.warning(
+                "%s %s : %s found %s",
+                error.__class__.__name__,
+                ".".join([str(e) for e in error.absolute_path]),
+                error.message,
+                error.instance if "required" not in error.message else "",
+            )
+            continue  # move on to next instrument grouping
+
+        # one instrument grouping scheme worked!
 
         # generate paths and folder
+        non_null_entities["subject"] = "ref"
         schema_path = bids_layout.build_path(non_null_entities, absolute_paths=False)
         schema_path_abs = os.path.join(bids_layout.root, schema.FORBIDS_SCHEMA_FOLDER, schema_path)
         os.makedirs(os.path.dirname(schema_path_abs), exist_ok=True)
@@ -150,5 +164,8 @@ def generate_series_model(
         with open(schema_path_abs, "wt") as fd:
             json.dump(json_schema, fd, indent=2)
 
-        logging.info("Successfully generated schema")
-        break
+        lgr.info("Successfully generated schema with grouping %s", str(instrument_query_tags))
+        return True
+    else:
+        lgr.error("failed to generate a schema for %s", str(series_entities))
+        return False

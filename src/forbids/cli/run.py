@@ -5,15 +5,27 @@ import logging
 import os
 
 import bids
+import coloredlogs
 
-from .init import initialize
-from .validation import validate
+from ..init import initialize
+from ..validation import process_validation
 
 DEBUG = bool(os.environ.get("DEBUG", False))
+coloredlogs.install()
 if DEBUG:
     logging.basicConfig(level=logging.DEBUG)
+    logging.root.setLevel(logging.DEBUG)
+    root_handler = logging.root.handlers[0]
+    root_handler.setFormatter(
+        logging.Formatter("%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s")
+    )
 else:
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s", level=logging.INFO
+    )
+    logging.root.setLevel(logging.INFO)
+
+lgr = logging.getLogger(__name__)
 
 
 def parse_args():
@@ -46,25 +58,20 @@ def parse_args():
 
 
 def main() -> None:
-
     args = parse_args()
     layout = bids.BIDSLayout(os.path.abspath(args.bids_path))
+    success = False
 
     if args.command == "init":
-        initialize(
+        success = initialize(
             layout,
             uniform_sessions=not args.varying_sessions,
             uniform_instruments=not args.scanner_specific,
-            version_specific=args.version_specific
+            version_specific=args.version_specific,
         )
     elif args.command == "validate":
-        no_error = True
-        for error in validate(layout, subject=args.participant_label, session=args.session_label):
-            no_error = False
-            print(
-                f"{f"{error.__class__}" + '.'.join(error.absolute_path)} : {error.message} found {error.instance if 'required' not in error.message else ''}"
-            )
-        exit(0 if no_error else 1)
+        success = process_validation(layout, subject=args.participant_label, session=args.session_label)
+    exit(0 if success else 1)
 
 
 if __name__ == "__main__":
