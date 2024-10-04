@@ -58,7 +58,6 @@ def parse_args():
 
 
 def main() -> None:
-
     args = parse_args()
     layout = bids.BIDSLayout(os.path.abspath(args.bids_path))
     success = False
