@@ -3,7 +3,7 @@ requires = ["flit"]
 build-backend = "flit.buildapi"
 
 [project]
-name =  "py-project-toml"
+name =  "forbids"
 authors = [
     {name = "Basile Pinsard", email = "basile.pinsard@gmail.com"},
 ]
@@ -16,7 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11"
 ]
-requires-python = ">=3.8.1"
+requires-python = ">=3.11.0"
 dynamic = ["version"]
 
 dependencies = [
