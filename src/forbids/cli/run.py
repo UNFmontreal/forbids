@@ -20,8 +20,9 @@ if DEBUG:
         logging.Formatter("%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s")
     )
 else:
-    logging.basicConfig(
-        format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s", level=logging.INFO
+    root_handler = logging.root.handlers[0]
+    root_handler.setFormatter(
+        logging.Formatter("%(levelname)-8s %(message)s")
     )
     logging.root.setLevel(logging.INFO)
 
