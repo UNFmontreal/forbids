@@ -28,7 +28,7 @@ else:
 lgr = logging.getLogger(__name__)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
 
     p = argparse.ArgumentParser(description="forbids - setup and validate protocol compliance")
     p.add_argument("command", help="init or validate")
