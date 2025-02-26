@@ -116,6 +116,7 @@ def generate_series_model(
 
         non_null_entities = {k: v for k, v in series_entities.items() if not isinstance(v, bids.layout.Query)}
         series_sidecars = bids_layout.get(**series_entities)
+        num_series = len(series_sidecars) # count planned repeat of the same series
         sidecars_by_instrument_group = {}
         # groups sidecars by instrument tags
         for sc in series_sidecars:
@@ -158,8 +159,8 @@ def generate_series_model(
         json_schema["bids"] = {
             "instrument_tags": instrument_query_tags,
             "optional": False,
-            "min_runs": 1,
-            "max_runs": 1,
+            "min_runs": num_series,
+            "max_runs": num_series,
         }
         with open(schema_path_abs, "wt") as fd:
             json.dump(json_schema, fd, indent=2)
