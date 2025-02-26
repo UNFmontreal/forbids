@@ -134,4 +134,8 @@ def process_validation(layout, subject, session):
             formatted_message,
         )
         lgr.debug(error)
+    if no_error:
+        lgr.info("The dataset was successfully checked as compliant to the protocol.")
+    else:
+        lgr.error("The dataset failed to comply to the protocol.")
     return no_error
