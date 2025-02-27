@@ -35,10 +35,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("command", help="init or validate")
     p.add_argument("bids_path", help="path to the BIDS dataset")
     p.add_argument(
-        "--varying-sessions",
+        "--session-specific",
         action="store_true",
         default=False,
-        help="all sessions will have the same structure, forces to factor session entity",
+        help="build a different schema for each session, is the study design is not repeated measures",
     )
 
     p.add_argument(
@@ -66,7 +66,7 @@ def main() -> None:
     if args.command == "init":
         success = initialize(
             layout,
-            uniform_sessions=not args.varying_sessions,
+            uniform_sessions=not args.session_specific,
             uniform_instruments=not args.scanner_specific,
             version_specific=args.version_specific,
         )
