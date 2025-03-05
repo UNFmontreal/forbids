@@ -109,7 +109,6 @@ def generate_series_model(
         try:
             instrument_groups[tag] = getattr(bids_layout, f"get_{tag}")(**series_entities)
         except Exception as e:
-            instrument_groups[tag] = "NaN"
             lgr.warning(f"Warning the tag {tag} fails to extract from {series_entities} with Exception {e}")
 
     instrument_query_tags = []
