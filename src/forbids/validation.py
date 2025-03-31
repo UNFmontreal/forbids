@@ -102,7 +102,7 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
                     sidecar_data = schema.prepare_metadata(sidecar, bidsfile_constraints["instrument_tags"])
                     yield from add_path_note_to_error(validator, sidecar_data, sidecar.relpath)
     for extra_sidecar in all_sidecars:
-        yield BIDSFileError("Unexpected BIDS file %s", extra_sidecar.relpath)
+        yield BIDSFileError(f"Unexpected BIDS file {extra_sidecar.relpath}")
 
 
 def add_path_note_to_error(validator, sidecar_data, filepath):

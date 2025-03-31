@@ -26,5 +26,5 @@ def test_tagpreset2type():
     }
 
 
-def test_dict2schemaprops():
+def test_struct2schemaprops():
     pass
