@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import keyword
 import logging
-import re
 import os
+import re
 from dataclasses import dataclass, make_dataclass
-from typing import Annotated, Any, Iterator, Literal, NewType, Tuple, Union
+from typing import (Annotated, Any, Dict, Iterator, Literal, NewType, Tuple,
+                    Union)
 
 import bids.layout
 import jsonschema
@@ -109,7 +110,7 @@ def sidecars2unionschema(
     for keys, sidecars in sidecars_groups.items():
         instrument_tags = [k[0] for k in keys]
         sidecars = list(sidecars)
-        # generate sidecar from first examplar
+        # generate schema from first examplar
         sc = sidecars[0]
         lgr.info("generating schema from %s", sc.relpath)
         metas = prepare_metadata(sc, instrument_tags)
@@ -128,9 +129,9 @@ def sidecars2unionschema(
 
         subschemas.append(subschema)
 
-    # if homogeneous (eg. single-site or single-vendor)
-    if len(subschemas) == 1:
-        return subschemas[0]
+#    # if homogeneous (eg. single-site or single-vendor)
+#    if len(subschemas) == 1:
+#        return subschemas[0]
 
     UnionModel = Annotated[
         Union[tuple(subschemas)],
@@ -139,6 +140,7 @@ def sidecars2unionschema(
             #            {k :sc.__name__ for k, sc in zip(mapping_keys, subschemas)}
         ),
     ]
+    print(UnionModel)
 
     return UnionModel
 
@@ -163,14 +165,22 @@ def compare_schema(sc1: dataclass, sc2: dataclass) -> bool:
     return match
 
 
+def get_instrument_key(
+    sidecar_data: dict[str, Any],
+    instrument_tags: List[str],
+):
+    # composes a instrument key from the metadata and tags list
+    return "-".join([sidecar_data.get(instr_tag, "unknown") for instr_tag in instrument_tags])
+
+
 def prepare_metadata(
-    sidecar,
-    instrument_tags,
+    sidecar: bids.layout.BIDSJSONFile,
+    instrument_tags: List[str],
 ):
     # prepares sidecar data for use with json_schema
 
     # rename conflictual keywords as the schema was created
     sidecar_data = {k + ("__" if k in keyword.kwlist else ""): v for k, v in sidecar.get_dict().items()}
     # create an aggregate tag of all schema-defined instrument tags
-    sidecar_data["__instrument__"] = "-".join([sidecar_data.get(instr_tag, "unknown") for instr_tag in instrument_tags])
+    sidecar_data["__instrument__"] = get_instrument_key(sidecar_data, instrument_tags)
     return sidecar_data

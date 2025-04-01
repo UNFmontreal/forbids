@@ -13,6 +13,7 @@ from jsonschema.exceptions import ValidationError
 
 from . import schema
 
+
 class BIDSJSONError(ValidationError):
     # class to represent BIDS metadata error
     pass
@@ -75,12 +76,21 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
 
                 lgr.debug(query_entities)
 
+                session_instrument_tags = {
+                    k: bids_layout.__getattr__(f"get_{k}")(subject=subject, session=session)[0]
+                    for k in bidsfile_constraints["instrument_tags"]
+                }
+                session_instrument_key = schema.get_instrument_key(
+                    session_instrument_tags, bidsfile_constraints["instrument_tags"]
+                )
+
                 sidecars_to_validate = bids_layout.get(**query_entities)
 
                 if not sidecars_to_validate:
                     if not bidsfile_constraints.get("optional", False):
-                        yield BIDSFileError(f"{expected_sidecar}", "no match")
-                        continue  # no point going further
+                        if session_instrument_key in bidsfile_constraints.get("required_for_instruments", []):
+                            yield BIDSFileError(f"{expected_sidecar}", "no match")
+                            continue  # no point going further
                     else:
                         lgr.info(f"optional {ref_sidecar.relpath} not present for sub-{subject} ses-{session}")
 

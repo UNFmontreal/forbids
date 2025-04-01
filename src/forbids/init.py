@@ -20,6 +20,7 @@ lgr = logging.getLogger(__name__)
 DEBUG = bool(os.environ.get("DEBUG", False))
 lgr.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
+
 def get_config(datatype):
     if datatype in ["anat", "func", "dwi", "swi", "fmap"]:
         modality = "mri"
@@ -117,13 +118,21 @@ def generate_series_model(
 
         non_null_entities = {k: v for k, v in series_entities.items() if not isinstance(v, bids.layout.Query)}
         series_sidecars = bids_layout.get(**series_entities)
+        series_subjects = bids_layout.get_subjects(**series_entities)
         sidecars_by_instrument_group = {}
         # groups sidecars by instrument tags
         for sc in series_sidecars:
+            sidecar_data = sc.get_dict()
             instr_grp = tuple(
-                (instr_tag, sc.get_dict().get(instr_tag, "unknown")) for instr_tag in instrument_query_tags
+                (instr_tag, sidecar_data.get(instr_tag, "unknown")) for instr_tag in instrument_query_tags
             )
             sidecars_by_instrument_group[instr_grp] = sidecars_by_instrument_group.get(instr_grp, []) + [sc]
+
+        instrument_grouped_subjects = bids_layout.get_subjects(**dict(instr_grp))
+        # if that grouping gets more subject we need to be more specific
+        if set(series_subjects) != set(instrument_grouped_subjects):
+            continue
+
         try:
             # attempt to generate the schema
             sidecar_schema = schema.sidecars2unionschema(
@@ -144,6 +153,7 @@ def generate_series_model(
             )
             continue  # move on to next instrument grouping
 
+        instruments_non_optional = set()
         # one instrument grouping scheme worked!
         min_runs, max_runs = 1, 1
         for subject in bids_layout.get_subjects():
@@ -152,7 +162,10 @@ def generate_series_model(
                 num_series = len(session_series)
                 min_runs = min(min_runs, num_series)
                 max_runs = max(max_runs, num_series)
-
+                if num_series:
+                    instruments_non_optional.add(
+                        schema.get_instrument_key(session_series[0].get_dict(), instrument_query_tags)
+                    )
         # generate paths and folder
         non_null_entities["subject"] = "ref"
         schema_path = bids_layout.build_path(non_null_entities, absolute_paths=False)
@@ -165,7 +178,8 @@ def generate_series_model(
         # TODO: set run number reqs semi-automatically, add tags based on examplar data
         json_schema["bids"] = {
             "instrument_tags": instrument_query_tags,
-            "optional": min_runs==0,
+            "optional": False,
+            "required_for_instruments": list(instruments_non_optional),
             "min_runs": min_runs,
             "max_runs": max_runs,
         }

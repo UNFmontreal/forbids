@@ -21,9 +21,7 @@ if DEBUG:
     )
 else:
     root_handler = logging.root.handlers[0]
-    root_handler.setFormatter(
-        logging.Formatter("%(levelname)-8s %(message)s")
-    )
+    root_handler.setFormatter(logging.Formatter("%(levelname)-8s %(message)s"))
     logging.root.setLevel(logging.INFO)
 
 lgr = logging.getLogger(__name__)
