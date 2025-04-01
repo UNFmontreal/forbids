@@ -3,14 +3,15 @@ from __future__ import annotations
 import logging
 import os
 
+lgr = logging.getLogger(__name__)
+DEBUG = bool(os.environ.get("DEBUG", False))
+lgr.setLevel(logging.DEBUG if DEBUG else logging.INFO)
+
 import bids
 from jsonschema._utils import Unset
 from jsonschema.exceptions import ValidationError
 
 from . import schema
-
-lgr = logging.getLogger(__name__)
-
 
 class BIDSJSONError(ValidationError):
     # class to represent BIDS metadata error
@@ -76,9 +77,12 @@ def validate(bids_layout: bids.BIDSLayout, **entities: dict[str, str | list]):
 
                 sidecars_to_validate = bids_layout.get(**query_entities)
 
-                if not sidecars_to_validate and not bidsfile_constraints.get("optional", False):
-                    yield BIDSFileError(f"{expected_sidecar}", "no match")
-                    continue  # no point going further
+                if not sidecars_to_validate:
+                    if not bidsfile_constraints.get("optional", False):
+                        yield BIDSFileError(f"{expected_sidecar}", "no match")
+                        continue  # no point going further
+                    else:
+                        lgr.info(f"optional {ref_sidecar.relpath} not present for sub-{subject} ses-{session}")
 
                 num_sidecars = len(sidecars_to_validate)
                 min_runs = bidsfile_constraints.get("min_runs", 0)

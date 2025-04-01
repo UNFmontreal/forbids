@@ -3,6 +3,7 @@ from __future__ import annotations
 import keyword
 import logging
 import re
+import os
 from dataclasses import dataclass, make_dataclass
 from typing import Annotated, Any, Iterator, Literal, NewType, Tuple, Union
 
@@ -13,6 +14,8 @@ from apischema import discriminator, schema
 from apischema.json_schema import deserialization_schema
 
 lgr = logging.getLogger(__name__)
+DEBUG = bool(os.environ.get("DEBUG", False))
+lgr.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
 FORBIDS_SCHEMA_FOLDER = ".forbids"
 

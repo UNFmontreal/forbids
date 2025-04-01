@@ -17,7 +17,8 @@ from . import schema
 
 configs = {}
 lgr = logging.getLogger(__name__)
-
+DEBUG = bool(os.environ.get("DEBUG", False))
+lgr.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
 def get_config(datatype):
     if datatype in ["anat", "func", "dwi", "swi", "fmap"]:
