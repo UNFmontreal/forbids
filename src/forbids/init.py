@@ -17,6 +17,7 @@ from . import schema
 
 configs = {}
 lgr = logging.getLogger(__name__)
+
 DEBUG = bool(os.environ.get("DEBUG", False))
 lgr.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
@@ -104,10 +105,13 @@ def generate_series_model(
         grouping_tags.extend(config["instrument"]["version_tags"])
 
     # list all unique instruments and models for this datatype
-    # unique_instruments = bids_layout.__getattr__(f"get_{config['instrument']['uid_tags'][0]}")(**series_entities)
-    instrument_groups = OrderedDict(
-        {tag: getattr(bids_layout, f"get_{tag}")(**series_entities) for tag in grouping_tags}
-    )
+    instrument_groups = OrderedDict()
+
+    for tag in grouping_tags:
+        try:
+            instrument_groups[tag] = getattr(bids_layout, f"get_{tag}")(**series_entities)
+        except Exception as e:
+            lgr.warning(f"Warning the tag {tag} fails to extract from {series_entities} with Exception {e}")
 
     instrument_query_tags = []
     # try grouping from more global to finer, (eg. first manufacturer, then scanner, then scanner+coil, ...)
