@@ -3,6 +3,7 @@ from __future__ import annotations
 import keyword
 import logging
 import re
+import os
 from dataclasses import dataclass, make_dataclass
 from typing import Annotated, Any, Iterator, Literal, NewType, Tuple, Union
 
@@ -13,6 +14,8 @@ from apischema import discriminator, schema
 from apischema.json_schema import deserialization_schema
 
 lgr = logging.getLogger(__name__)
+DEBUG = bool(os.environ.get("DEBUG", False))
+lgr.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
 FORBIDS_SCHEMA_FOLDER = ".forbids"
 
@@ -51,8 +54,9 @@ def tagpreset2type(tag: str, tag_preset: str, value: Any):
         raise RuntimeError(f"Unsupported constraint for {tag} in the config file.")
 
 
-def dict2schemaprops(sidecar: dict, config_props: dict, schema_path: str) -> Iterator:
-    # from a example dictionary and matching config, generate dataclass fields definitions
+def struct2schemaprops(sidecar: dict, config_props: dict, schema_path: str) -> Iterator:
+    # from a example dictionary or list and matching config,
+    # generate dataclass fields definitions
     # recursively creates subschema for dictionary values
 
     # Parameters:
@@ -65,6 +69,8 @@ def dict2schemaprops(sidecar: dict, config_props: dict, schema_path: str) -> Ite
             k2 = k + ("__" if k in keyword.kwlist else "")
             if isinstance(config_props[k], dict):
                 yield k2, sidecar2schema(v, tag_preset, f"{schema_path}_{k}")
+            elif isinstance(config_props[k], list):
+                yield k2, sidecar2schema(v, tag_preset, f"{schema_path}_{k}")
             else:
                 yield k2, tagpreset2type(f"{schema_path}_{k}", tag_preset, v)
 
@@ -76,7 +82,7 @@ def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str):
     # sidecar: examplar sidecar
     # config_props: schema properties config
     # subschema_name: name to give the subschema
-    return make_dataclass(subschema_name, fields=list(dict2schemaprops(sidecar, config_props, subschema_name)))
+    return make_dataclass(subschema_name, fields=list(struct2schemaprops(sidecar, config_props, subschema_name)))
 
 
 def get_validator(sidecar_schema: dict) -> jsonschema.validators._Validator:

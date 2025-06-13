@@ -17,7 +17,9 @@ from . import schema
 
 configs = {}
 lgr = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+
+DEBUG = bool(os.environ.get("DEBUG", False))
+lgr.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
 def get_config(datatype):
     if datatype in ["anat", "func", "dwi", "swi", "fmap"]:
@@ -147,6 +149,13 @@ def generate_series_model(
             continue  # move on to next instrument grouping
 
         # one instrument grouping scheme worked!
+        min_runs, max_runs = 1, 1
+        for subject in bids_layout.get_subjects():
+            for session in bids_layout.get_session(subject=subject):
+                session_series = bids_layout.get(subject=subject, session=session, **series_entities)
+                num_series = len(session_series)
+                min_runs = min(min_runs, num_series)
+                max_runs = max(max_runs, num_series)
 
         # generate paths and folder
         non_null_entities["subject"] = "ref"
@@ -160,9 +169,9 @@ def generate_series_model(
         # TODO: set run number reqs semi-automatically, add tags based on examplar data
         json_schema["bids"] = {
             "instrument_tags": instrument_query_tags,
-            "optional": False,
-            "min_runs": 1,
-            "max_runs": 1,
+            "optional": min_runs==0,
+            "min_runs": min_runs,
+            "max_runs": max_runs,
         }
         with open(schema_path_abs, "wt") as fd:
             json.dump(json_schema, fd, indent=2)

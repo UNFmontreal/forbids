@@ -5,7 +5,7 @@ forBIDS aims to be a tool for BIDS that forbids deviation from a established acq
 It is meant to be ran continuously on session newly converted to BIDS, as a validation before being merged into a dataset.
 
 It aims to check that all planned sequences have been acquired (allowing optional ones), and check that a configured set of sequence parameters match expected values.
-It is designed for multi-centric/multi-vendor studies: the sequence parameters constraint can be set conditional to Manufacter/Model/Instrument/SoftwareVersion.
+It is designed for multi-centric/multi-vendor studies: the sequence parameters constraint can be set conditional to Manufacturer/Model/Instrument/SoftwareVersion.
 
 
 ## design
