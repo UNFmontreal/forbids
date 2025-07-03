@@ -155,13 +155,12 @@ def generate_series_model(
 
         instruments_non_optional = set()
         # one instrument grouping scheme worked!
-        min_runs, max_runs = 1, 1
+        runs_per_session = []
         for subject in bids_layout.get_subjects():
-            for session in bids_layout.get_session(subject=subject):
+            for session in bids_layout.get_session(subject=subject) + [bids.layout.Query.NONE]:
                 session_series = bids_layout.get(subject=subject, session=session, **series_entities)
                 num_series = len(session_series)
-                min_runs = min(min_runs, num_series)
-                max_runs = max(max_runs, num_series)
+                runs_per_session.append(num_series)
                 if num_series:
                     instruments_non_optional.add(
                         schema.get_instrument_key(session_series[0].get_dict(), instrument_query_tags)
@@ -180,8 +179,8 @@ def generate_series_model(
             "instrument_tags": instrument_query_tags,
             "optional": False,
             "required_for_instruments": list(instruments_non_optional),
-            "min_runs": min_runs,
-            "max_runs": max_runs,
+            "min_runs": min(runs_per_session),
+            "max_runs": max(runs_per_session),
         }
         with open(schema_path_abs, "wt") as fd:
             json.dump(json_schema, fd, indent=2)
