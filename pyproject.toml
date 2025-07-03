@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.scripts]
-forbids = "forbids.cli.run:main"
+forbids = "forbids.cli.run"
 
 [project.optional-dependencies]
 spark = [
