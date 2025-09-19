@@ -108,10 +108,9 @@ def generate_series_model(
     instrument_groups = OrderedDict()
 
     for tag in grouping_tags:
-        try:
-            instrument_groups[tag] = getattr(bids_layout, f"get_{tag}")(**series_entities)
-        except Exception as e:
-            lgr.warning(f"Warning the tag {tag} fails to extract from {series_entities} with Exception {e}")
+        getter = f"get_{tag}"
+        if hasattr(bids_layout, getter):
+            instrument_groups[tag] = getattr(bids_layout, getter)(**series_entities)
 
     instrument_query_tags = []
     # try grouping from more global to finer, (eg. first manufacturer, then scanner, then scanner+coil, ...)
