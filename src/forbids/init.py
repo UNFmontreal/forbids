@@ -157,7 +157,7 @@ def generate_series_model(
         # one instrument grouping scheme worked!
         runs_per_session = []
         for subject in bids_layout.get_subjects():
-            for session in bids_layout.get_session(subject=subject) + [bids.layout.Query.NONE]:
+            for session in bids_layout.get_session(subject=subject) or [bids.layout.Query.NONE]:
                 session_series = bids_layout.get(subject=subject, session=session, **series_entities)
                 num_series = len(session_series)
                 runs_per_session.append(num_series)
