@@ -137,7 +137,7 @@ def process_validation(layout, subject, session):
         no_error = False
 
         formatted_message = error.message
-        if len(error.path) == 0 and not isinstance(error.instance, Unset):
+        if len(error.path) == 0 and not isinstance(error.instance, Unset) and not error.relative_schema_path[0] == 'required':
             formatted_message = f"non-existing schema for instrument {error.instance['__instrument__']}"
 
         lgr.error(
