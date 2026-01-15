@@ -1,0 +1,50 @@
+{
+    "instrument": {
+        "uid_tags": [
+            "DeviceSerialNumber"
+        ],
+        "grouping_tags": [
+            "Manufacturer",
+            "ManufacturersModelName",
+            "ElectrodeManufacturer",
+            "ElectrodeManufacturersModelName"
+        ],
+        "version_tags": [
+            "SoftwareVersions"
+        ],
+        "other_tags": [
+            "InstitutionName",
+            "InstitutionAddress"
+        ]
+    },
+    "properties": {
+        "DeviceSerialNumber": "*",
+        "ECOGChannelCount": "=",
+        "EEGChannelCount": "=",
+        "ElectrodeManufacturer": "=",
+        "ElectrodeManufacturersModelName": "=",
+        "HardwareFilters": "=",
+        "iEEGCoordinateSystem": "=",
+        "iEEGCoordinateSystemDescription": "*",
+        "iEEGCoordinateUnits": "=",
+        "iEEGElectrodeGroups": "*",
+        "iEEGGround": "=",
+        "iEEGPlacementScheme": "=",
+        "iEEGReference": "=",
+        "InstitutionAddress": "=",
+        "InstitutionName": "=",
+        "Manufacturer": "=",
+        "ManufacturersModelName": "=",
+        "PowerLineFrequency": "=",
+        "RecordingDuration": "*",
+        "RecordingType": "=",
+        "SamplingFrequency": "=",
+        "SEEGChannelCount": "=",
+        "SoftwareFilters": "*",
+        "SoftwareVersions": "=",
+        "SubjectArtefactDescription": "*",
+        "TaskDescription": "*",
+        "TaskName": "=",
+        "TriggerChannelCount": "="
+    }
+}

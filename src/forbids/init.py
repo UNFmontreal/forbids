@@ -1,3 +1,10 @@
+"""Initialization module for forBIDS schema generation.
+
+This module handles the initialization of forBIDS schemas from exemplar BIDS datasets.
+It analyzes existing BIDS data to generate JSON schemas that can be used for protocol
+compliance validation. The module supports multi-site and multi-vendor studies by
+grouping data based on instrument characteristics.
+"""
 #   -------------------------------------------------------------
 #   Licensed under the MIT License. See LICENSE in project root for information.
 #   -------------------------------------------------------------
@@ -22,20 +29,50 @@ lgr.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
 
 def get_config(datatype):
+    """Load configuration for a specific BIDS datatype.
+
+    Loads and caches the configuration file containing validation presets
+    for metadata tags specific to the given datatype. Configurations are
+    cached after first load for efficiency.
+
+    Args:
+        datatype: BIDS datatype (e.g., "anat", "func", "dwi", "fmap", "eeg", "meg").
+
+    Returns:
+        Dictionary containing:
+            - "instrument": Instrument tag configuration (grouping, uid, version tags)
+            - "properties": Metadata validation presets for each property
+
+    Raises:
+        ValueError: If datatype is not recognized.
+
+    Examples:
+        >>> config = get_config("anat")
+        >>> "Manufacturer" in config["properties"]
+        True
+    """
+    # Map BIDS datatypes to instrument types
     if datatype in ["anat", "func", "dwi", "swi", "fmap"]:
-        modality = "mri"
-    elif datatype in ["eeg", "meg"]:
-        modality = "meeg"
-    # TODO: add more datatype
+        instrument = "mri"
+    elif datatype == "eeg":
+        instrument = "eeg"
+    elif datatype == "meg":
+        instrument = "meg"
+    elif datatype == "pet":
+        instrument = "pet"
+    elif datatype == "ieeg":
+        instrument = "ieeg"
+    # TODO: add more datatypes (nirs, motion, etc.)
     else:
-        raise ValueError("unknown data type")
-    if modality not in configs:
-        with files("forbids").joinpath(f"config/{modality}_tags.json") as cfg_pth:
+        raise ValueError(f"unknown data type: {datatype}")
+
+    if instrument not in configs:
+        with files("forbids").joinpath(f"config/{instrument}_tags.json") as cfg_pth:
             lgr.debug("loading config %s", cfg_pth)
             with open(cfg_pth) as cfg_fd:
-                configs[modality] = json.load(cfg_fd)
-        configs[modality]["properties"]["__instrument__"] = "="
-    return configs[modality]
+                configs[instrument] = json.load(cfg_fd)
+        configs[instrument]["properties"]["__instrument__"] = "="
+    return configs[instrument]
 
 
 def initialize(
@@ -45,6 +82,32 @@ def initialize(
     version_specific: bool = False,
     instrument_grouping_tags: tuple = tuple(),
 ) -> None:
+    """Initialize forBIDS schemas from a BIDS dataset.
+
+    Generates JSON schemas for all unique series in the dataset by analyzing
+    exemplar data. Schemas are saved to the `.forbids` folder within the BIDS
+    dataset root.
+
+    The function groups data by instrument characteristics (manufacturer, model, etc.)
+    and creates schemas that can validate protocol compliance across subjects and sessions.
+
+    Args:
+        bids_layout: PyBIDS BIDSLayout object for the dataset.
+        uniform_instruments: If True, create schemas that work across all instruments
+            of the same manufacturer/model. If False, allow instrument-specific schemas.
+        uniform_sessions: If True, create schemas that work across all sessions.
+            If False, allow session-specific schemas for longitudinal studies.
+        version_specific: If True, allow schemas to be specific to scanner software version.
+        instrument_grouping_tags: Additional custom tags for instrument grouping.
+
+    Returns:
+        True if all schemas were successfully generated, False otherwise.
+
+    Examples:
+        >>> layout = bids.BIDSLayout("/data/my_bids_dataset")
+        >>> success = initialize(layout, uniform_instruments=True)
+        >>> # Schemas are now in /data/my_bids_dataset/.forbids/
+    """
     # generates schemas from examplar data for all unique set of entities
     # (but factoring subject, run and session if uniform_sessions)
     # attempts to group examplar data by shared instrument tags going from coarser to finer grouping
@@ -91,6 +154,33 @@ def generate_series_model(
     version_specific: bool = False,
     **series_entities: dict,
 ):
+    """Generate a schema model for a specific BIDS series.
+
+    Creates a JSON schema for a single series (identified by BIDS entities like
+    datatype, suffix, etc.) by analyzing exemplar data and grouping by instrument
+    characteristics. The function tries different grouping strategies from coarse
+    to fine-grained until finding one that works.
+
+    Args:
+        bids_layout: PyBIDS BIDSLayout object for the dataset.
+        uniform_instruments: If True, group across all instruments of same type.
+        uniform_sessions: If True, group across all sessions.
+        version_specific: If True, include software version in grouping.
+        **series_entities: BIDS entities identifying the series (e.g., datatype="anat", suffix="T1w").
+
+    Returns:
+        True if schema was successfully generated and saved, False otherwise.
+
+    Notes:
+        The function attempts grouping strategies in order:
+        1. By manufacturer
+        2. By manufacturer + model
+        3. By manufacturer + model + coil
+        4. (If uniform_instruments=False) By device serial number
+        5. (If version_specific=True) By software version
+
+        The first grouping that successfully validates all exemplars is used.
+    """
     # generates schemas from examplar data for single set of entities describing the "series"
     # attempts to group examplar data by shared instrument tags going from coarser to finer grouping
     # if uniform_instruments is false, it also allows to group per unique instruments

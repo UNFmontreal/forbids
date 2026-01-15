@@ -1,0 +1,44 @@
+{
+    "instrument": {
+        "uid_tags": [
+            "DeviceSerialNumber"
+        ],
+        "grouping_tags": [
+            "Manufacturer",
+            "ManufacturersModelName"
+        ],
+        "version_tags": [
+            "SoftwareVersions"
+        ],
+        "other_tags": [
+            "InstitutionName",
+            "InstitutionAddress"
+        ]
+    },
+    "properties": {
+        "ContinuousHeadLocalization": "=",
+        "DewarPosition": "*",
+        "DigitizedHeadPoints": "*",
+        "DigitizedLandmarks": "*",
+        "HeadCoilFrequency": "~=0.5",
+        "InstitutionAddress": "=",
+        "InstitutionName": "=",
+        "Manufacturer": "=",
+        "ManufacturersModelName": "=",
+        "MaxMovement": "*",
+        "MEGChannelCount": "=",
+        "MEGCoordinateSystem": "*",
+        "MEGCoordinateSystemDescription": "*",
+        "MEGCoordinateUnits": "=",
+        "MEGREFChannelCount": "=",
+        "PowerLineFrequency": "=",
+        "RecordingDuration": "*",
+        "RecordingType": "=",
+        "SamplingFrequency": "=",
+        "SoftwareFilters": "*",
+        "SoftwareVersions": "*",
+        "SubjectArtefactDescription": "*",
+        "TaskDescription": "*",
+        "TaskName": "="
+    }
+}

@@ -1,3 +1,9 @@
+"""Command-line interface for forBIDS.
+
+This module provides the CLI entry point for forBIDS, supporting two main commands:
+- init: Initialize schemas from a BIDS dataset
+- validate: Validate a BIDS dataset against existing schemas
+"""
 from __future__ import annotations
 
 import argparse
@@ -28,6 +34,23 @@ lgr = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for forBIDS.
+
+    Returns:
+        Parsed arguments namespace containing:
+            - command: "init" or "validate"
+            - bids_path: Path to BIDS dataset
+            - session_specific: Whether to create session-specific schemas (init only)
+            - scanner_specific: Whether to create scanner-specific schemas (init only)
+            - version_specific: Whether to create version-specific schemas (init only)
+            - participant_label: List of participant IDs to validate (validate only)
+            - session_label: List of session IDs to validate (validate only)
+
+    Examples:
+        >>> # From command line:
+        >>> # forbids init /data/bids --session-specific
+        >>> # forbids validate /data/bids --participant-label 01 02
+    """
 
     p = argparse.ArgumentParser(description="forbids - setup and validate protocol compliance")
     p.add_argument("command", help="init or validate")
@@ -57,6 +80,18 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Main entry point for the forBIDS CLI.
+
+    Parses arguments and executes either the init or validate command.
+    Exits with code 0 on success, 1 on failure.
+
+    Examples:
+        >>> # Initialize schemas:
+        >>> # forbids init /data/my_bids_dataset
+        >>>
+        >>> # Validate a subject:
+        >>> # forbids validate /data/my_bids_dataset --participant-label 01
+    """
     args = parse_args()
     layout = bids.BIDSLayout(os.path.abspath(args.bids_path))
     success = False

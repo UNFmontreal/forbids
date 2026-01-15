@@ -1,0 +1,59 @@
+{
+    "instrument": {
+        "uid_tags": [
+            "DeviceSerialNumber"
+        ],
+        "grouping_tags": [
+            "Manufacturer",
+            "ManufacturersModelName"
+        ],
+        "version_tags": [
+            "SoftwareVersions"
+        ],
+        "other_tags": [
+            "InstitutionName",
+            "InstitutionAddress"
+        ]
+    },
+    "properties": {
+        "AcquisitionDuration": "*",
+        "AttenuationCorrection": "=",
+        "BodyPart": "*",
+        "DecayCorrection": "=",
+        "DeviceSerialNumber": "*",
+        "DoseCalibrationFactor": "*",
+        "FrameDuration": "=",
+        "FrameTimesStart": "=",
+        "ImageDecayCorrected": "=",
+        "ImageDecayCorrectionTime": "=",
+        "InjectedMass": "~=0.01",
+        "InjectedMassPerWeight": "~=0.001",
+        "InjectedRadioactivity": "~=10",
+        "InjectedRadioactivityUnits": "=",
+        "InstitutionAddress": "=",
+        "InstitutionName": "=",
+        "InjectionStart": "=",
+        "MagneticFieldStrength": "=",
+        "Manufacturer": "=",
+        "ManufacturersModelName": "=",
+        "ModeOfAdministration": "=",
+        "MolarActivity": "*",
+        "Radionuclide": "=",
+        "ReconFilterSize": "=",
+        "ReconFilterType": "=",
+        "ReconMethodName": "=",
+        "ReconMethodParameterLabels": "=",
+        "ReconMethodParameterUnits": "=",
+        "ReconMethodParameterValues": "=",
+        "ScaleFactor": "*",
+        "ScatterFraction": "*",
+        "SoftwareVersions": "=",
+        "SpecificRadioactivity": "*",
+        "TaskName": "=",
+        "TimeZero": "=",
+        "TracerMolecularWeight": "=",
+        "TracerName": "=",
+        "TracerRadionuclide": "=",
+        "Units": "="
+    }
+}
