@@ -45,9 +45,9 @@ def initialize(
     version_specific: bool = False,
     instrument_grouping_tags: tuple = tuple(),
 ) -> None:
-    # generates schemas from examplar data for all unique set of entities
+    # generates schemas from exemplar data for all unique set of entities
     # (but factoring subject, run and session if uniform_sessions)
-    # attempts to group examplar data by shared instrument tags going from coarser to finer grouping
+    # attempts to group exemplar data by shared instrument tags going from coarser to finer grouping
     # if uniform_instruments is false, it also allows to group per unique instruments
 
     all_datatypes = bids_layout.get_datatype()
@@ -91,8 +91,8 @@ def generate_series_model(
     version_specific: bool = False,
     **series_entities: dict,
 ):
-    # generates schemas from examplar data for single set of entities describing the "series"
-    # attempts to group examplar data by shared instrument tags going from coarser to finer grouping
+    # generates schemas from exemplar data for single set of entities describing the "series"
+    # attempts to group exemplar data by shared instrument tags going from coarser to finer grouping
     # if uniform_instruments is false, it also allows to group per unique instruments
 
     config = get_config(series_entities.get("datatype"))
@@ -174,7 +174,7 @@ def generate_series_model(
         # serialize dataclass to json-schema, TODO: better handle serialization errors
         json_schema = deserialization_schema(sidecar_schema, additional_properties=True)
         # add BIDS custom json structure
-        # TODO: set run number reqs semi-automatically, add tags based on examplar data
+        # TODO: set run number reqs semi-automatically, add tags based on exemplar data
         json_schema["bids"] = {
             "instrument_tags": instrument_query_tags,
             "optional": False,

@@ -31,7 +31,7 @@ def tagpreset2type(tag: str, tag_preset: str, value: Any):
     # Parameters:
     #   tag: the name of the tag
     #   tag_preset: the expression to set constraint from
-    #   value: the examplar value to determine type and set constants
+    #   value: the exemplar value to determine type and set constants
 
     # Returns:
     #   type: a python type with added apischema constraints
@@ -61,7 +61,7 @@ def struct2schemaprops(sidecar: dict, config_props: dict, schema_path: str) -> I
     # recursively creates subschema for dictionary values
 
     # Parameters:
-    # sidecar: dict with examplar values to determine type and constant
+    # sidecar: dict with exemplar values to determine type and constant
     # config_props: dict with preset of how to validate tags
     # schema_path: schema name to be postpended in recursive schema defs for uniqness
     for k, tag_preset in config_props.items():
@@ -77,10 +77,10 @@ def struct2schemaprops(sidecar: dict, config_props: dict, schema_path: str) -> I
 
 
 def sidecar2schema(sidecar: dict, config_props: dict, subschema_name: str):
-    # from a examplar sidecar and config, generate a schema
+    # from a exemplar sidecar and config, generate a schema
 
     # Parameters:
-    # sidecar: examplar sidecar
+    # sidecar: exemplar sidecar
     # config_props: schema properties config
     # subschema_name: name to give the subschema
     return make_dataclass(subschema_name, fields=list(struct2schemaprops(sidecar, config_props, subschema_name)))
@@ -110,7 +110,7 @@ def sidecars2unionschema(
     for keys, sidecars in sidecars_groups.items():
         instrument_tags = [k[0] for k in keys]
         sidecars = list(sidecars)
-        # generate schema from first examplar
+        # generate schema from first exemplar
         sc = sidecars[0]
         lgr.info("generating schema from %s", sc.relpath)
         metas = prepare_metadata(sc, instrument_tags)
