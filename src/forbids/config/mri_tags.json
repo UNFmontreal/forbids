@@ -38,6 +38,7 @@
         "PercentPhaseFOV": "=",
         "PhaseEncodingSteps": "=",
         "PhaseResolution": "=",
+        "PhaseEncodingDirection": "=",
         "PixelBandwidth": "=",
         "ProcedureStepDescription": "*",
         "ProtocolName": "*",
